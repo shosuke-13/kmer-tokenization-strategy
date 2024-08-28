@@ -1,0 +1,5 @@
+{
+  "kmer_size": 6,
+  "vocab_file": "vocab.txt",
+  "special_tokens_map_file": "special_tokens_map.json"
+}
