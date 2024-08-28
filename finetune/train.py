@@ -469,7 +469,7 @@ def main():
                 data_args=data_args,
                 training_args=training_args,
                 tokenizer=tokenizer,
-                task_details=task_details["tasks"][detail_name]
+                task_details=task_details
             )
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
     else:
@@ -480,7 +480,7 @@ def main():
             data_args=data_args,
             training_args=training_args,
             tokenizer=tokenizer,
-            task_details=task_details["tasks"][detail_name]
+            task_details=task_details
         )
 
 
