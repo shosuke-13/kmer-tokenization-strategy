@@ -283,6 +283,57 @@ def get_callbacks(model_args):
     return callbacks
 
 
+def log_metrics_to_wandb(
+        run: wandb.sdk.wandb_run.Run,
+        results: Dict[str, Any],
+        model_args: ModelArguments,
+        data_args: DataArguments,
+        training_args: TrainingArguments,
+        wandb_api_key: str
+    ) -> None:
+    """Log metrics to Weights & Biases (wandb)."""
+    
+    if not wandb_api_key:
+        logger.warning("No wandb API key provided. Skipping wandb logging.")
+        return
+
+    try:
+        metrics = {
+            "model_name"      : model_args.hf_model_path,
+            "task_name"       : data_args.task_name,
+            "epochs"          : training_args.num_train_epochs,
+            "learning_rate"   : training_args.learning_rate,
+            "train_batch_size": training_args.per_device_train_batch_size,
+            "eval_batch_size" : training_args.per_device_eval_batch_size
+        }
+
+        if model_args.use_lora:
+            logger.debug("Logging LoRA metrics")
+            metrics.update({
+                "lora_r"             : model_args.lora_r,
+                "lora_alpha"         : model_args.lora_alpha,
+                "lora_dropout"       : model_args.lora_dropout,
+                "lora_target_modules": model_args.lora_target_modules
+            })
+        elif model_args.use_ia3:
+            logger.debug("Logging IA3 metrics")
+            metrics.update({
+                "ia3_target_modules"     : model_args.ia3_target_modules,
+                "ia3_feedforward_modules": model_args.ia3_feedforward_modules
+            })
+        else:
+            logger.debug("Logging fine-tuning metrics")
+
+        metrics.update(results)
+        run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
+
+        logger.debug(f"Logging metrics to wandb: {metrics}")
+        logger.success("wandb run completed successfully.")
+    except Exception as e:
+        logger.error(f"Error logging metrics to wandb: {e}")
+        raise
+
+
 def train(
         model_args: ModelArguments, 
         data_args: DataArguments, 
@@ -388,50 +439,40 @@ def train(
     
     # finetune
     try:
-        logger.debug(f"Start training model on task: {data_args.task_name}")
-
         trainer.train()
         trainer.save_model(training_args.output_dir)
-
         logger.success(f"Model trained successfully.")
     except Exception as e:
         logger.error(f"Error training model: {e}")
         sys.exit(1)
 
-    # predict on test set
-    pred = trainer.predict(test_dataset)
-    logger.info(compute_metrics(pred))
-
     # save evaluation results
     if training_args.eval_and_save_results:
-        results = trainer.evaluate(eval_dataset=test_dataset)
+        results = trainer.evaluate(eval_dataset=test_dataset) # evaluate on test set
         os.makedirs(training_args.output_dir, exist_ok=True)
         with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
             json.dump(results, f)
-    
-    # save prediction values
-    if data_args.is_save_predictions:
-        pred = trainer.predict(test_dataset)
-        save_results(
-            pred, 
-            task_details["type"], 
-            training_args.output_dir, 
-            test_dataset["name"]
+
+        # log metrics to wandb
+        log_metrics_to_wandb(
+            run,
+            results,
+            model_args, 
+            data_args, 
+            training_args, 
+            wandb_api_key, 
         )
 
-    # log metrics to wandb
-    if wandb_api_key:
-        try:
-            results = trainer.evaluate(eval_dataset=test_dataset)
-            metrics = {**vars(model_args), **vars(data_args), **vars(training_args), **results}
-            run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
-            wandb.finish()
-
-            logger.success("wandb run completed successfully.")
-        except:
-            logger.error("Error logging metrics to wandb.")
-            sys.exit(1)
-
+        # save prediction values
+        if data_args.is_save_predictions:
+            pred = trainer.predict(test_dataset)
+            save_results(
+                pred, 
+                task_details["type"], 
+                training_args.output_dir, 
+                test_dataset["name"]
+            )
+    
 
 def main():
     """fine-tune Huggingface DNA foundation models."""
@@ -439,6 +480,7 @@ def main():
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     logger.add(os.path.join(training_args.output_dir, "train_and_evaulate.log"), rotation="10 MB")
 
+    # load tokenizer (DNABERT-based or NT-based)
     try:
         if data_args.use_nt_kmer:
             tokenizer = transformers.AutoTokenizer.from_pretrained(model_args.hf_model_path)
@@ -457,6 +499,7 @@ def main():
         logger.error(f"Error loading tokenizer: {e}")
         sys.exit(1) 
     
+    # fine-tune on PGB dataset
     task_details = pgb_dataset_details(data_args)
     if data_args.do_all_tasks:
         # train on all tasks
@@ -469,7 +512,7 @@ def main():
                 data_args=data_args,
                 training_args=training_args,
                 tokenizer=tokenizer,
-                task_details=task_details["tasks"][detail_name]
+                task_details=task_details
             )
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
     else:
@@ -480,7 +523,7 @@ def main():
             data_args=data_args,
             training_args=training_args,
             tokenizer=tokenizer,
-            task_details=task_details["tasks"][detail_name]
+            task_details=task_details
         )
 
 
