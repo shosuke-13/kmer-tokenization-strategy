@@ -424,12 +424,14 @@ def train(
         try:
             results = trainer.evaluate(eval_dataset=test_dataset)
             metrics = {**vars(model_args), **vars(data_args), **vars(training_args), **results}
+            
+            logger.debug(f"Logging metrics to wandb: {metrics}")
             run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
             wandb.finish()
 
             logger.success("wandb run completed successfully.")
-        except:
-            logger.error("Error logging metrics to wandb.")
+        except Exception as e:
+            logger.error(f"Error logging metrics to wandb: {e}")
             sys.exit(1)
 
 
