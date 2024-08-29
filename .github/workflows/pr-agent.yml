@@ -1,0 +1,27 @@
+name: Pull Request Agent
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  pr_agent_job:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+    name: Run PR-Agent on Pull Request
+    steps:
+      - name: Run PR-Agent
+        id: pragent
+        uses: Codium-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.FINE_GRAINED_PERSONAL_ACCESS_TOKEN }}
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
+          github_action_config.enable_output: "true"
+          pr_reviewer.num_code_suggestions: "0"
+          CONFIG.MODEL: "gpt-4o-mini-2024-07-18"
