@@ -310,6 +310,7 @@ def log_metrics_to_wandb(
         if model_args.use_lora:
             logger.debug("Logging LoRA metrics")
             metrics.update({
+                "use_lora"           : model_args.use_lora,
                 "lora_r"             : model_args.lora_r,
                 "lora_alpha"         : model_args.lora_alpha,
                 "lora_dropout"       : model_args.lora_dropout,
@@ -318,8 +319,9 @@ def log_metrics_to_wandb(
         elif model_args.use_ia3:
             logger.debug("Logging IA3 metrics")
             metrics.update({
-                "ia3_target_modules"     : model_args.ia3_target_modules,
-                "ia3_feedforward_modules": model_args.ia3_feedforward_modules
+                "use_ia3"                : model_args.use_ia3,
+                "ia3_target_modules"     : "key, value, intermediate.dense",
+                "ia3_feedforward_modules": "intermediate.dense"
             })
         else:
             logger.debug("Logging fine-tuning metrics")
