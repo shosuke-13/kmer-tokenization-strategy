@@ -283,20 +283,45 @@ def get_callbacks(model_args):
     return callbacks
 
 
+def calculate_r2_score(df: pd.DataFrame) -> float:
+    return r2_score(df["true_label"], df["pred_label"])
+
+
+def calculate_r2_of_promoter_strength(
+        results_df: pd.DataFrame,
+        suffixes: List[str]
+    ) -> Dict[str, float]:
+    
+    return {
+        suffix: calculate_r2_score(results_df[results_df['name'].str.endswith(suffix)])
+        for suffix in suffixes
+    }
+
+
+def calculate_r2_scores_by_experiment(
+        suffixes: List[str],
+        trainer: transformers.Trainer,
+        eval_dataset: Dataset
+    ) -> Dict[str, float]:
+    """calculate R2 scores for each experiment on promoter/terminator strength"""
+    pred = trainer.predict(eval_dataset)
+
+    results_df = pd.DataFrame({
+        "name": eval_dataset["name"],
+        "true_label": pred.label_ids,
+        "pred_label": pred.predictions.squeeze()
+    })
+    return calculate_r2_of_promoter_strength(results_df, suffixes)
+
+
 def log_metrics_to_wandb(
         run: wandb.sdk.wandb_run.Run,
         results: Dict[str, Any],
         model_args: ModelArguments,
         data_args: DataArguments,
-        training_args: TrainingArguments,
-        wandb_api_key: str
+        training_args: TrainingArguments
     ) -> None:
     """Log metrics to Weights & Biases (wandb)."""
-    
-    if not wandb_api_key:
-        logger.warning("No wandb API key provided. Skipping wandb logging.")
-        return
-
     try:
         metrics = {
             "model_name"      : model_args.hf_model_path,
@@ -304,12 +329,15 @@ def log_metrics_to_wandb(
             "epochs"          : training_args.num_train_epochs,
             "learning_rate"   : training_args.learning_rate,
             "train_batch_size": training_args.per_device_train_batch_size,
-            "eval_batch_size" : training_args.per_device_eval_batch_size
+            "eval_batch_size" : training_args.per_device_eval_batch_size,
+            "kmer_window"     : data_args.kmer_window,
+            "kmer_stride"     : data_args.kmer_stride,
         }
 
         if model_args.use_lora:
             logger.debug("Logging LoRA metrics")
             metrics.update({
+                "use_lora"           : model_args.use_lora,
                 "lora_r"             : model_args.lora_r,
                 "lora_alpha"         : model_args.lora_alpha,
                 "lora_dropout"       : model_args.lora_dropout,
@@ -318,14 +346,17 @@ def log_metrics_to_wandb(
         elif model_args.use_ia3:
             logger.debug("Logging IA3 metrics")
             metrics.update({
-                "ia3_target_modules"     : model_args.ia3_target_modules,
-                "ia3_feedforward_modules": model_args.ia3_feedforward_modules
+                "use_ia3"                : model_args.use_ia3,
+                "ia3_target_modules"     : "key, value, intermediate.dense",
+                "ia3_feedforward_modules": "intermediate.dense"
             })
         else:
             logger.debug("Logging fine-tuning metrics")
 
+
         metrics.update(results)
         run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
+        wandb.finish()
 
         logger.debug(f"Logging metrics to wandb: {metrics}")
         logger.success("wandb run completed successfully.")
@@ -339,7 +370,8 @@ def train(
         data_args: DataArguments, 
         training_args: TrainingArguments, 
         tokenizer: transformers.PreTrainedTokenizer, 
-        task_details: Dict[str, Any]
+        task_details: Dict[str, Any],
+        run: Optional[wandb.sdk.wandb_run.Run] = None
     ) -> None:
     """Train and evaluate model."""
 
@@ -420,23 +452,6 @@ def train(
                 callbacks=get_callbacks(model_args),
             )
     
-    # initialize wandb
-    wandb_api_key = os.environ.get("WANDB_API_KEY")
-    if wandb_api_key:
-        logger.info("Wandb API key found in environment variables.")
-        try:
-            wandb.login(key=wandb_api_key)
-            run = wandb.init(
-                project=data_args.project_name,
-                name=generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
-            )
-            logger.success("wandb initialized successfully.")
-        except Exception as e:
-            logger.error(f"Error initializing wandb: {e}")
-            sys.exit(1)
-    else:
-        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
-    
     # finetune
     try:
         trainer.train()
@@ -453,14 +468,31 @@ def train(
         with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
             json.dump(results, f)
 
+        # calculate R2 scores for promoter/terminator strength
+        if data_args.task_name.startswith("promoter_strength"):
+            suffixes = ["At", "Sb", "Zm"]
+            r2_scores = calculate_r2_scores_by_experiment(
+                            suffixes, 
+                            trainer, 
+                            test_dataset,
+                        )
+            results.update(r2_scores)
+        elif data_args.task_name.startswith("terminator_strength"):
+            suffixes = ["Arabidopsis", "Maize", "GC"]
+            r2_scores = calculate_r2_scores_by_experiment(
+                            suffixes, 
+                            trainer, 
+                            test_dataset,
+                        )
+            results.update(r2_scores)
+
         # log metrics to wandb
         log_metrics_to_wandb(
             run,
             results,
             model_args, 
             data_args, 
-            training_args, 
-            wandb_api_key, 
+            training_args 
         )
 
         # save prediction values
@@ -472,7 +504,29 @@ def train(
                 training_args.output_dir, 
                 test_dataset["name"]
             )
-    
+
+
+def init_wandb(
+        wandb_api_key: str, 
+        project_name: str, 
+        run_name: str
+    ) -> wandb.sdk.wandb_run.Run:
+    """Initialize wandb."""
+    if wandb_api_key:
+        logger.info("Wandb API key found in environment variables.")
+        try:
+            wandb.login(key=wandb_api_key)
+            run = wandb.init(project=project_name, name=run_name)
+            logger.info(f"wandb run name: {run.name}")
+            logger.success("wandb initialized successfully.")
+            return run
+        except Exception as e:
+            logger.error(f"Error initializing wandb: {e}")
+            sys.exit(1)
+    else:
+        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
+        return None   
+
 
 def main():
     """fine-tune Huggingface DNA foundation models."""
@@ -501,29 +555,45 @@ def main():
     
     # fine-tune on PGB dataset
     task_details = pgb_dataset_details(data_args)
+    wandb_api_key = os.environ.get("WANDB_API_KEY")
+    logger.debug(f"Task details: {task_details}")
     if data_args.do_all_tasks:
         # train on all tasks
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
+            
+            # initialize wandb
+            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+            run = init_wandb(wandb_api_key, data_args.project_name, run_name)
+
             logger.info(f"Current task name: {data_args.task_name}")
+            logger.debug(f"Wandb run name: {run.name}")
+            
             train(
                 model_args=model_args,
                 data_args=data_args,
                 training_args=training_args,
                 tokenizer=tokenizer,
-                task_details=task_details
+                task_details=task_details,
+                run=run
             )
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
     else:
         # train on single task
         logger.info("Train on single task.")
+
+        # initialize wandb
+        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+        run = init_wandb(wandb_api_key, data_args.project_name, run_name)
+
         train(
             model_args=model_args,
             data_args=data_args,
             training_args=training_args,
             tokenizer=tokenizer,
-            task_details=task_details
+            task_details=task_details,
+            run=run
         )
 
 
