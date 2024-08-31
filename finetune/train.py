@@ -473,8 +473,7 @@ def train(
             r2_scores = calculate_r2_scores_by_experiment(
                             suffixes, 
                             trainer, 
-                            test_dataset, 
-                            data_args
+                            test_dataset,
                         )
             results.update(r2_scores)
         elif data_args.task_name.startswith("terminator_strength"):
@@ -482,8 +481,7 @@ def train(
             r2_scores = calculate_r2_scores_by_experiment(
                             suffixes, 
                             trainer, 
-                            test_dataset, 
-                            data_args
+                            test_dataset,
                         )
             results.update(r2_scores)
 

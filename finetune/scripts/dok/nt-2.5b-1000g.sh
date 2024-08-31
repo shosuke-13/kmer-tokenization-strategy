@@ -12,11 +12,11 @@ do
         --project_name "$PROJECT_NAME" \
         --use_lora True \
         --use_ia3 False \
-        --lora_r "$LORA_RANK" \
-        --lora_alpha "$LORA_ALPHA" \
+        --lora_r 16 \
+        --lora_alpha 8 \
         --lora_dropout 0.05 \
-        --lora_target_modules "query,key,value,output" \
-        --use_nt_kmer "$USE_NT_KMER" \
+        --lora_target_modules "query,key,value,output.dense" \
+        --use_nt_kmer True \
         --per_device_train_batch_size "$BATCH_SIZE" \
         --per_device_eval_batch_size "$BATCH_SIZE" \
         --num_train_epochs "$EPOCHS" \
@@ -39,7 +39,7 @@ do
         --project_name "$PROJECT_NAME" \
         --use_lora False \
         --use_ia3 True \
-        --use_nt_kmer "$USE_NT_KMER" \
+        --use_nt_kmer True \
         --per_device_train_batch_size "$BATCH_SIZE" \
         --per_device_eval_batch_size "$BATCH_SIZE" \
         --num_train_epochs "$EPOCHS" \
