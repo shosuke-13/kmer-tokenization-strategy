@@ -356,6 +356,7 @@ def log_metrics_to_wandb(
 
         metrics.update(results)
         run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
+        wandb.finish()
 
         logger.debug(f"Logging metrics to wandb: {metrics}")
         logger.success("wandb run completed successfully.")
@@ -561,11 +562,13 @@ def main():
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
-            logger.info(f"Current task name: {data_args.task_name}")
             
             # initialize wandb
             run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
             run = init_wandb(wandb_api_key, data_args.project_name, run_name)
+
+            logger.info(f"Current task name: {data_args.task_name}")
+            logger.debug(f"Wandb run name: {run.name}")
             
             train(
                 model_args=model_args,
