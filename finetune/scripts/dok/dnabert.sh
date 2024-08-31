@@ -29,7 +29,7 @@ done
 # non-overlap
 for k in 3 4 5 6
 do
-    python train.py \       
+    python train.py \
         --hf_model_path zhihan1996/DNA_bert_"$k" \
         --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
         --task_name "$TASK" \

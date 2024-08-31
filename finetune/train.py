@@ -432,6 +432,8 @@ def train(
                 project=data_args.project_name,
                 name=generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
             )
+
+            logger.info(f"wandb run name: {run.name}")
             logger.success("wandb initialized successfully.")
         except Exception as e:
             logger.error(f"Error initializing wandb: {e}")
@@ -503,6 +505,7 @@ def main():
     
     # fine-tune on PGB dataset
     task_details = pgb_dataset_details(data_args)
+    logger.debug(f"Task details: {task_details}")
     if data_args.do_all_tasks:
         # train on all tasks
         logger.info("Train on all tasks.")
