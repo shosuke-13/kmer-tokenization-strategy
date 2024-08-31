@@ -469,7 +469,7 @@ def train(
             json.dump(results, f)
 
         # calculate R2 scores for promoter/terminator strength
-        if data_args.task_name.startswith("promoter_strength"):
+        if data_args.task_name.endswith("leaf"):
             suffixes = ["At", "Sb", "Zm"]
             r2_scores = calculate_r2_scores_by_experiment(
                             suffixes, 
@@ -477,7 +477,7 @@ def train(
                             test_dataset,
                         )
             results.update(r2_scores)
-        elif data_args.task_name.startswith("terminator_strength"):
+        elif data_args.task_name.endswith("protoplast"):
             suffixes = ["Arabidopsis", "Maize", "GC"]
             r2_scores = calculate_r2_scores_by_experiment(
                             suffixes, 
@@ -537,7 +537,8 @@ def main():
     # load tokenizer (DNABERT-based or NT-based)
     try:
         if data_args.use_nt_kmer:
-            tokenizer = transformers.AutoTokenizer.from_pretrained(model_args.hf_model_path)
+            # NT and AgroNT uses the same tokenizer
+            tokenizer = transformers.AutoTokenizer.from_pretrained("InstaDeepAI/agro-nucleotide-transformer-1b")
             logger.info("Load Nucleotide Transformer kmer tokenizer")
         else:
             tokenizer =  KmerTokenizer(
