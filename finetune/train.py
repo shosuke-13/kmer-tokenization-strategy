@@ -283,6 +283,37 @@ def get_callbacks(model_args):
     return callbacks
 
 
+def calculate_r2_score(df: pd.DataFrame) -> float:
+    return r2_score(df["true_label"], df["pred_label"])
+
+
+def calculate_r2_of_promoter_strength(
+        results_df: pd.DataFrame,
+        suffixes: List[str]
+    ) -> Dict[str, float]:
+    
+    return {
+        suffix: calculate_r2_score(results_df[results_df['name'].str.endswith(suffix)])
+        for suffix in suffixes
+    }
+
+
+def calculate_r2_scores_by_experiment(
+        suffixes: List[str],
+        trainer: transformers.Trainer,
+        eval_dataset: Dataset
+    ) -> Dict[str, float]:
+    """calculate R2 scores for each experiment on promoter/terminator strength"""
+    pred = trainer.predict(eval_dataset)
+
+    results_df = pd.DataFrame({
+        "name": eval_dataset["name"],
+        "true_label": pred.label_ids,
+        "pred_label": pred.predictions.squeeze()
+    })
+    return calculate_r2_of_promoter_strength(results_df, suffixes)
+
+
 def log_metrics_to_wandb(
         run: wandb.sdk.wandb_run.Run,
         results: Dict[str, Any],
@@ -298,7 +329,9 @@ def log_metrics_to_wandb(
             "epochs"          : training_args.num_train_epochs,
             "learning_rate"   : training_args.learning_rate,
             "train_batch_size": training_args.per_device_train_batch_size,
-            "eval_batch_size" : training_args.per_device_eval_batch_size
+            "eval_batch_size" : training_args.per_device_eval_batch_size,
+            "kmer_window"     : data_args.kmer_window,
+            "kmer_stride"     : data_args.kmer_stride,
         }
 
         if model_args.use_lora:
@@ -319,6 +352,7 @@ def log_metrics_to_wandb(
             })
         else:
             logger.debug("Logging fine-tuning metrics")
+
 
         metrics.update(results)
         run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
@@ -432,6 +466,26 @@ def train(
         os.makedirs(training_args.output_dir, exist_ok=True)
         with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
             json.dump(results, f)
+
+        # calculate R2 scores for promoter/terminator strength
+        if data_args.task_name.startswith("promoter_strength"):
+            suffixes = ["At", "Sb", "Zm"]
+            r2_scores = calculate_r2_scores_by_experiment(
+                            suffixes, 
+                            trainer, 
+                            test_dataset, 
+                            data_args
+                        )
+            results.update(r2_scores)
+        elif data_args.task_name.startswith("terminator_strength"):
+            suffixes = ["Arabidopsis", "Maize", "GC"]
+            r2_scores = calculate_r2_scores_by_experiment(
+                            suffixes, 
+                            trainer, 
+                            test_dataset, 
+                            data_args
+                        )
+            results.update(r2_scores)
 
         # log metrics to wandb
         log_metrics_to_wandb(
