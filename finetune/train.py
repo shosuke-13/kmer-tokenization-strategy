@@ -288,15 +288,9 @@ def log_metrics_to_wandb(
         results: Dict[str, Any],
         model_args: ModelArguments,
         data_args: DataArguments,
-        training_args: TrainingArguments,
-        wandb_api_key: str
+        training_args: TrainingArguments
     ) -> None:
     """Log metrics to Weights & Biases (wandb)."""
-    
-    if not wandb_api_key:
-        logger.warning("No wandb API key provided. Skipping wandb logging.")
-        return
-
     try:
         metrics = {
             "model_name"      : model_args.hf_model_path,
@@ -341,7 +335,8 @@ def train(
         data_args: DataArguments, 
         training_args: TrainingArguments, 
         tokenizer: transformers.PreTrainedTokenizer, 
-        task_details: Dict[str, Any]
+        task_details: Dict[str, Any],
+        run: Optional[wandb.sdk.wandb_run.Run] = None
     ) -> None:
     """Train and evaluate model."""
 
@@ -422,25 +417,6 @@ def train(
                 callbacks=get_callbacks(model_args),
             )
     
-    # initialize wandb
-    wandb_api_key = os.environ.get("WANDB_API_KEY")
-    if wandb_api_key:
-        logger.info("Wandb API key found in environment variables.")
-        try:
-            wandb.login(key=wandb_api_key)
-            run = wandb.init(
-                project=data_args.project_name,
-                name=generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
-            )
-
-            logger.info(f"wandb run name: {run.name}")
-            logger.success("wandb initialized successfully.")
-        except Exception as e:
-            logger.error(f"Error initializing wandb: {e}")
-            sys.exit(1)
-    else:
-        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
-    
     # finetune
     try:
         trainer.train()
@@ -463,8 +439,7 @@ def train(
             results,
             model_args, 
             data_args, 
-            training_args, 
-            wandb_api_key, 
+            training_args 
         )
 
         # save prediction values
@@ -476,7 +451,29 @@ def train(
                 training_args.output_dir, 
                 test_dataset["name"]
             )
-    
+
+
+def init_wandb(
+        wandb_api_key: str, 
+        project_name: str, 
+        run_name: str
+    ) -> wandb.sdk.wandb_run.Run:
+    """Initialize wandb."""
+    if wandb_api_key:
+        logger.info("Wandb API key found in environment variables.")
+        try:
+            wandb.login(key=wandb_api_key)
+            run = wandb.init(project=project_name, name=run_name)
+            logger.info(f"wandb run name: {run.name}")
+            logger.success("wandb initialized successfully.")
+            return run
+        except Exception as e:
+            logger.error(f"Error initializing wandb: {e}")
+            sys.exit(1)
+    else:
+        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
+        return None   
+
 
 def main():
     """fine-tune Huggingface DNA foundation models."""
@@ -505,6 +502,7 @@ def main():
     
     # fine-tune on PGB dataset
     task_details = pgb_dataset_details(data_args)
+    wandb_api_key = os.environ.get("WANDB_API_KEY")
     logger.debug(f"Task details: {task_details}")
     if data_args.do_all_tasks:
         # train on all tasks
@@ -512,23 +510,35 @@ def main():
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
             logger.info(f"Current task name: {data_args.task_name}")
+            
+            # initialize wandb
+            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+            run = init_wandb(wandb_api_key, data_args.project_name, run_name)
+            
             train(
                 model_args=model_args,
                 data_args=data_args,
                 training_args=training_args,
                 tokenizer=tokenizer,
-                task_details=task_details
+                task_details=task_details,
+                run=run
             )
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
     else:
         # train on single task
         logger.info("Train on single task.")
+
+        # initialize wandb
+        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+        run = init_wandb(wandb_api_key, data_args.project_name, run_name)
+
         train(
             model_args=model_args,
             data_args=data_args,
             training_args=training_args,
             tokenizer=tokenizer,
-            task_details=task_details
+            task_details=task_details,
+            run=run
         )
 
 
