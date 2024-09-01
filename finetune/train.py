@@ -283,21 +283,6 @@ def get_callbacks(model_args):
     return callbacks
 
 
-def calculate_r2_score(df: pd.DataFrame) -> float:
-    return r2_score(df["true_label"], df["pred_label"])
-
-
-def calculate_r2_of_promoter_strength(
-        results_df: pd.DataFrame,
-        suffixes: List[str]
-    ) -> Dict[str, float]:
-    
-    return {
-        suffix: calculate_r2_score(results_df[results_df['name'].str.endswith(suffix)])
-        for suffix in suffixes
-    }
-
-
 def calculate_r2_scores_by_experiment(
         suffixes: List[str],
         trainer: transformers.Trainer,
@@ -312,9 +297,43 @@ def calculate_r2_scores_by_experiment(
                 })
 
     logger.debug(f"Full results dataframe shape: {results_df.shape}")
-    logger.debug(f"Unique values in 'name' column: {results_df['name'].unique()}")
     logger.debug(f"Results dataframe: {results_df.head()}")
-    return calculate_r2_of_promoter_strength(results_df, suffixes)
+
+    r2_scores = {}
+    for suffix in suffixes:
+        filtered_df = results_df[results_df['name'].str.endswith(suffix)]
+        logger.debug(f"Filtered dataframe for {suffix} shape: {filtered_df.shape}")
+        if filtered_df.empty:
+            logger.warning(f"No data found for suffix: {suffix}")
+            r2_scores[suffix] = None
+        else:
+            r2_scores[suffix] = calculate_r2_score(filtered_df)
+    
+    return r2_scores
+
+
+def calculate_r2_score(df: pd.DataFrame) -> float:
+    if df.empty:
+        return None
+    return r2_score(df["true_label"], df["pred_label"])
+
+
+def calculate_r2_of_promoter_strength(
+        results_df: pd.DataFrame,
+        suffixes: List[str]
+    ) -> Dict[str, float]:
+    
+    r2_scores = {}
+    for suffix in suffixes:
+        filtered_df = results_df[results_df['name'].str.endswith(suffix)]
+        logger.debug(f"Filtered dataframe for {suffix} shape: {filtered_df.shape}")
+        if filtered_df.empty:
+            logger.warning(f"No data found for suffix: {suffix}")
+            r2_scores[suffix] = None
+        else:
+            r2_scores[suffix] = calculate_r2_score(filtered_df)
+    
+    return r2_scores
 
 
 def log_metrics_to_wandb(
