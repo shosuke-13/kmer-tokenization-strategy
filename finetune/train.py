@@ -284,11 +284,10 @@ def get_callbacks(model_args):
 
 
 def calculate_r2_scores_by_experiment(
-        suffixes: List[str],
         trainer: transformers.Trainer,
         eval_dataset: Dataset
     ) -> Dict[str, float]:
-    """calculate R2 scores for each experiment on promoter/terminator strength"""
+    """Calculate R2 scores for each experiment on promoter/terminator strength"""
     pred = trainer.predict(eval_dataset)
     results_df = pd.DataFrame({
                     "name": eval_dataset["name"],
@@ -299,9 +298,12 @@ def calculate_r2_scores_by_experiment(
     logger.debug(f"Full results dataframe shape: {results_df.shape}")
     logger.debug(f"Results dataframe: {results_df.head()}")
 
+    # Extract unique suffixes
+    suffixes = results_df['name'].apply(lambda x: x.split('_')[-1]).unique()
+
     r2_scores = {}
     for suffix in suffixes:
-        filtered_df = results_df[results_df['name'].str.endswith(suffix)]
+        filtered_df = results_df[results_df['name'].apply(lambda x: x.split('_')[-1] == suffix)]
         logger.debug(f"Filtered dataframe for {suffix} shape: {filtered_df.shape}")
         if filtered_df.empty:
             logger.warning(f"No data found for suffix: {suffix}")
@@ -310,30 +312,11 @@ def calculate_r2_scores_by_experiment(
             r2_scores[suffix] = calculate_r2_score(filtered_df)
     
     return r2_scores
-
 
 def calculate_r2_score(df: pd.DataFrame) -> float:
     if df.empty:
         return None
     return r2_score(df["true_label"], df["pred_label"])
-
-
-def calculate_r2_of_promoter_strength(
-        results_df: pd.DataFrame,
-        suffixes: List[str]
-    ) -> Dict[str, float]:
-    
-    r2_scores = {}
-    for suffix in suffixes:
-        filtered_df = results_df[results_df['name'].str.endswith(suffix)]
-        logger.debug(f"Filtered dataframe for {suffix} shape: {filtered_df.shape}")
-        if filtered_df.empty:
-            logger.warning(f"No data found for suffix: {suffix}")
-            r2_scores[suffix] = None
-        else:
-            r2_scores[suffix] = calculate_r2_score(filtered_df)
-    
-    return r2_scores
 
 
 def log_metrics_to_wandb(
@@ -378,7 +361,6 @@ def log_metrics_to_wandb(
 
         metrics.update(results)
         run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
-        wandb.finish()
 
         logger.debug(f"Logging metrics to wandb: {metrics}")
         logger.success("wandb run completed successfully.")
@@ -491,22 +473,10 @@ def train(
             json.dump(results, f)
 
         # calculate R2 scores for promoter/terminator strength
-        if data_args.task_name.endswith("leaf"):
-            suffixes = ["At", "Sb", "Zm"]
-            r2_scores = calculate_r2_scores_by_experiment(
-                            suffixes, 
-                            trainer, 
-                            test_dataset,
-                        )
+        if data_args.task_name.endswith("leaf") or data_args.task_name.endswith("protoplast"):
+            r2_scores = calculate_r2_scores_by_experiment(trainer, test_dataset)
             results.update(r2_scores)
-        elif data_args.task_name.endswith("protoplast"):
-            suffixes = ["Arabidopsis", "Maize", "GC"]
-            r2_scores = calculate_r2_scores_by_experiment(
-                            suffixes, 
-                            trainer, 
-                            test_dataset,
-                        )
-            results.update(r2_scores)
+            logger.info(f"R2 scores: {r2_scores}")
 
         # log metrics to wandb
         log_metrics_to_wandb(
@@ -580,8 +550,8 @@ def main():
     task_details = pgb_dataset_details(data_args)
     wandb_api_key = os.environ.get("WANDB_API_KEY")
     logger.debug(f"Task details: {task_details}")
-    if data_args.do_all_tasks:
-        # train on all tasks
+    
+    if data_args.do_all_tasks: # train on all tasks
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
@@ -602,6 +572,11 @@ def main():
                 run=run
             )
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
+            try:
+                logger.info("Finishing wandb run.")
+                wandb.finish()
+            except Exception as e:
+                logger.error(f"Error finishing wandb run: {e}")
     else:
         # train on single task
         logger.info("Train on single task.")
@@ -618,6 +593,14 @@ def main():
             task_details=task_details,
             run=run
         )
+
+        # finish wandb run
+        if run is not None:
+            try:
+                logger.info("Finishing wandb run.")
+                wandb.finish()
+            except Exception as e:
+                logger.error(f"Error finishing wandb run: {e}")
 
 
 if __name__ == "__main__":
