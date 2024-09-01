@@ -304,16 +304,12 @@ def calculate_r2_scores_by_experiment(
         eval_dataset: Dataset
     ) -> Dict[str, float]:
     """calculate R2 scores for each experiment on promoter/terminator strength"""
-    logger.debug(f"eval_dataset shape: {eval_dataset.shape}")
-    logger.debug(f"Unique values in 'name' column: {eval_dataset['name'].unique()}")
-    
     pred = trainer.predict(eval_dataset)
-
     results_df = pd.DataFrame({
-        "name": eval_dataset["name"],
-        "true_label": pred.label_ids,
-        "pred_label": pred.predictions.squeeze()
-    })
+                    "name": eval_dataset["name"],
+                    "true_label": pred.label_ids,
+                    "pred_label": pred.predictions.squeeze()
+                })
 
     logger.debug(f"Full results dataframe shape: {results_df.shape}")
     logger.debug(f"Unique values in 'name' column: {results_df['name'].unique()}")
