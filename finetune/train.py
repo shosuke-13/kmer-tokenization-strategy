@@ -389,7 +389,7 @@ def train(
     # load model
     try:
         logger.debug(f"Load {task_details['type']} model: num_labels={task_details['num_labels']}")
-        if task_details["type"] == "classification":
+        if task_details["type"] == "binary_classification":
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
                         cache_dir=training_args.cache_dir,
@@ -550,7 +550,7 @@ def main():
     task_details = pgb_dataset_details(data_args)
     wandb_api_key = os.environ.get("WANDB_API_KEY")
     logger.debug(f"Task details: {task_details}")
-    
+
     if data_args.do_all_tasks: # train on all tasks
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
