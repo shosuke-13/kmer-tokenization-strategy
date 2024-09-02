@@ -32,7 +32,7 @@ do
 
     # IA3
     python train.py \
-        --hf_model_path "InstaDeepAI/nucleotide-transformer-human-ref" \
+        --hf_model_path "InstaDeepAI/nucleotide-transformer-500m-human-ref" \
         --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
         --task_name "$TASK" \
         --output_dir "$SAKURA_ARTIFACT_DIR" \
