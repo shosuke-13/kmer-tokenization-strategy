@@ -222,7 +222,7 @@ def get_compute_metrics(task_type: str):
         preds = pred.predictions.argmax(-1) if task_type == "classification" else pred.predictions.squeeze()
 
         try:
-            if task_type == "classification":
+            if task_type == "binary_classification":
                 precision, recall, _ = precision_recall_curve(labels, preds)
                 return {
                     "accuracy": accuracy_score(labels, preds),
