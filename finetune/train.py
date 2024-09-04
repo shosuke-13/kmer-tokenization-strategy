@@ -261,19 +261,21 @@ def save_results(
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
 
-    # binary classification and single-label regression
-    df["true_label"] = predictions.true_labels
-    df["pred_label"] = predictions.pred_labels
-
-    if task_type == "classification":
-        # binary classification
-        df["pred_score_0"] = predictions[:, 0]
-        df["pred_score_1"] = predictions[:, 1]
+    # save actual values and predictions
     if len(df["true_labels"].shape) > 1:
         # multi-label regression
         for i in range(predictions.true_labels.shape[1]):
             df[f"true_label_{i}"] = predictions.true_labels[:, i]
             df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
+    else:
+        # binary classification and single-label regression
+        df["true_label"] = predictions.true_labels
+        df["pred_label"] = predictions.pred_labels
+
+        if task_type == "binary_classification":
+            # binary classification
+            df["pred_score_0"] = predictions[:, 0]
+            df["pred_score_1"] = predictions[:, 1]
 
     csv_buffer = io.StringIO()
     df.to_csv(csv_buffer, index=False)
