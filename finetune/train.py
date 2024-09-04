@@ -1,5 +1,6 @@
 import os
 import sys
+import io
 import json
 import time
 import yaml
@@ -8,6 +9,7 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Tuple, List, Any
 
+import boto3
 import wandb
 import torch
 import numpy as np
@@ -92,7 +94,7 @@ class DataArguments:
     project_name       : str  = field(default="hf-peft", metadata={"help": "Weights & Biases project name"})
     
     # Data processing
-    is_save_predictions: bool  = field(default=False, metadata={"help": "Whether to save predictions"})
+    is_save_predictions: bool  = field(default=True, metadata={"help": "Whether to save predictions"})
     test_size          : float = field(default=0.1, metadata={"help": "Test size for train-test split"})
     val_split_seed     : int   = field(default=42, metadata={"help": "Seed for train-test split"})
 
@@ -151,10 +153,14 @@ def tokenize_function(tokenizer, sample: Dict[str, Any], max_length: int) -> Dic
         truncation=True,
         max_length=max_length
     )
+
+    # Handle both 'label' and 'labels' keys
+    label_key = "label" if "label" in sample else "labels"
+
     return {
         "input_ids": encoded["input_ids"],
         "attention_mask": encoded["attention_mask"],
-        "labels": sample["label"],
+        "labels": sample[label_key],
     }
 
 
@@ -245,25 +251,50 @@ def get_compute_metrics(task_type: str):
     return compute_metrics
 
 
-def save_results(predictions, task_type: str, out_dir: str, names: List[str]) -> None:
+def save_results(
+        predictions, 
+        key_path: str,
+        task_type: str, 
+        names: List[str],
+        results: Dict[str, Any]
+    ) -> None:
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
 
-    # binary classification and single-label regression
-    df["true_label"] = predictions.true_labels
-    df["pred_label"] = predictions.pred_labels
-
-    if task_type == "classification":
-        # binary classification
-        df["pred_score_0"] = predictions[:, 0]
-        df["pred_score_1"] = predictions[:, 1]
+    # save actual values and predictions
     if len(df["true_labels"].shape) > 1:
         # multi-label regression
         for i in range(predictions.true_labels.shape[1]):
             df[f"true_label_{i}"] = predictions.true_labels[:, i]
             df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
+    else:
+        # binary classification and single-label regression
+        df["true_label"] = predictions.true_labels
+        df["pred_label"] = predictions.pred_labels
 
-    df.to_parquet(os.path.join(out_dir, "predictions.parquet"), index=False)
+        if task_type == "binary_classification":
+            # binary classification
+            df["pred_score_0"] = predictions[:, 0]
+            df["pred_score_1"] = predictions[:, 1]
+
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    
+    # upload to S3
+    with boto3.client('s3') as s3_client:
+        # predictions
+        s3_client.put_object(
+            Bucket="pmb_2024", 
+            Key=key_path, 
+            Body=csv_buffer.getvalue()
+        )
+
+        # metrics results (json)
+        s3_client.put_object(
+            Bucket="pmb_2024", 
+            Key=key_path.replace("predictions.csv", "results.json"), 
+            Body=json.dumps(results)
+        )
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
@@ -388,18 +419,19 @@ def train(
 
     # load model
     try:
-        logger.debug(f"Load {task_details['type']} model: num_labels={task_details['num_labels']}")
+        num_labels = len(train_dataset[0]["labels"]) if task_details['type'] == "multi_variable_regression" else task_details["num_labels"]
+        logger.debug(f"Load {task_details['type']} model: num_labels={num_labels}")
         if task_details["type"] == "binary_classification":
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
                         cache_dir=training_args.cache_dir,
-                        num_labels=task_details["num_labels"],
+                        num_labels=num_labels,
                         trust_remote_code=True,
                     )
         else:
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
-                        num_labels=task_details["num_labels"],
+                        num_labels=num_labels,
                         problem_type="regression",
                         trust_remote_code=True
                     )
@@ -490,11 +522,22 @@ def train(
         # save prediction values
         if data_args.is_save_predictions:
             pred = trainer.predict(test_dataset)
+
+            # ex.) agro-nucleotide-transformer-1b/terminator_strength/42/predictions.csv
+            key_path = os.path.join(
+                model_args.hf_model_path, 
+                data_args.task_name,
+                training_args.seed,
+                f"predictions.csv"
+            )
+
+            # save metrics and predictions to S3
             save_results(
                 pred, 
+                key_path,
                 task_details["type"], 
-                training_args.output_dir, 
-                test_dataset["name"]
+                test_dataset["name"],
+                results
             )
 
 

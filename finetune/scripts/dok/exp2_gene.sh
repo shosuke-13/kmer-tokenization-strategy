@@ -10,17 +10,14 @@ models=(
     "InstaDeepAI/agro-nucleotide-transformer-1b"
 )
 
-# 10 tasks
 # (IA)^3 LR=3e-3 
 # (3e-3, paper) Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning
 for model in "${models[@]}"
 do
-    for seed in {40..44}
-    do
-        python train.py \
+    python train.py \
             --hf_model_path "$model" \
             --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
-            --task_name "lncrna" \
+            --task_name "gene_exp" \
             --output_dir "$SAKURA_ARTIFACT_DIR" \
             --project_name "$PROJECT_NAME" \
             --use_lora False \
@@ -36,6 +33,6 @@ do
             --logging_steps 15000 \
             --fp16 True \
             --report_to "wandb" \
-            --seed "$seed"
-    done
+            --seed 42 \
+            --is_save_predictions True
 done
