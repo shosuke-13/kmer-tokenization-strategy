@@ -94,7 +94,7 @@ class DataArguments:
     project_name       : str  = field(default="hf-peft", metadata={"help": "Weights & Biases project name"})
     
     # Data processing
-    is_save_predictions: bool  = field(default=False, metadata={"help": "Whether to save predictions"})
+    is_save_predictions: bool  = field(default=True, metadata={"help": "Whether to save predictions"})
     test_size          : float = field(default=0.1, metadata={"help": "Test size for train-test split"})
     val_split_seed     : int   = field(default=42, metadata={"help": "Seed for train-test split"})
 
@@ -253,10 +253,10 @@ def get_compute_metrics(task_type: str):
 
 def save_results(
         predictions, 
-        data_args: DataArguments,
-        model_args: ModelArguments,
+        key_path: str,
         task_type: str, 
-        names: List[str]
+        names: List[str],
+        results: Dict[str, Any]
     ) -> None:
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
@@ -280,10 +280,19 @@ def save_results(
     
     # upload to S3
     s3_client = boto3.client('s3')
+
+    # predictions
     s3_client.put_object(
-        Bucket=os.environ.get('S3_BUCKET_NAME', "pmb2024"), 
-        Key=os.path.join(model_args.hf_model_path, f"{data_args.task_name}_predictions.csv"), 
+        Bucket="pmb_2024", 
+        Key=key_path, 
         Body=csv_buffer.getvalue()
+    )
+
+    # metrics results (json)
+    s3_client.put_object(
+        Bucket="pmb_2024", 
+        Key=key_path.replace("predictions.csv", "results.json"), 
+        Body=json.dumps(results)
     )
 
 
@@ -512,12 +521,22 @@ def train(
         # save prediction values
         if data_args.is_save_predictions:
             pred = trainer.predict(test_dataset)
+
+            # ex.) agro-nucleotide-transformer-1b/terminator_strength/42/predictions.csv
+            key_path = os.path.join(
+                model_args.hf_model_path, 
+                data_args.task_name,
+                training_args.seed,
+                f"predictions.csv"
+            )
+
+            # save metrics and predictions to S3
             save_results(
                 pred, 
-                data_args,
-                model_args,
+                key_path,
                 task_details["type"], 
-                test_dataset["name"]
+                test_dataset["name"],
+                results
             )
 
 

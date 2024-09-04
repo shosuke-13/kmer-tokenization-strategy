@@ -12,7 +12,6 @@ tasks=(
 models=(
     "InstaDeepAI/nucleotide-transformer-500m-human-ref"
     "InstaDeepAI/nucleotide-transformer-500m-1000g"
-    "InstaDeepAI/nucleotide-transformer-500m-1000g"
     "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
     "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
     "InstaDeepAI/agro-nucleotide-transformer-1b"
