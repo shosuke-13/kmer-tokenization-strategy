@@ -153,10 +153,14 @@ def tokenize_function(tokenizer, sample: Dict[str, Any], max_length: int) -> Dic
         truncation=True,
         max_length=max_length
     )
+
+    # Handle both 'label' and 'labels' keys
+    label_key = "label" if "label" in sample else "labels"
+
     return {
         "input_ids": encoded["input_ids"],
         "attention_mask": encoded["attention_mask"],
-        "labels": sample["label"],
+        "labels": sample[label_key],
     }
 
 
