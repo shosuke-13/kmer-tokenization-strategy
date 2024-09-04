@@ -43,7 +43,7 @@ pgb_tasks:
       - leaf
       - protoplast
   gene_exp:
-    type: multiple_variable_regression
+    type: multi_variable_regression
     max_seq_len: 1024
     tasks:
       - arabidopsis_thaliana

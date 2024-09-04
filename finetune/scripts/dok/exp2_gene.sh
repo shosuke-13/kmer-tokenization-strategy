@@ -4,7 +4,7 @@ set -e
 # (IA)^3 LR=3e-3 
 # (3e-3, paper) Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning
 python train.py \
-        --hf_model_path "$model" \
+        --hf_model_path "$MODEL" \
         --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
         --task_name "gene_exp" \
         --output_dir "$SAKURA_ARTIFACT_DIR" \

@@ -409,18 +409,19 @@ def train(
 
     # load model
     try:
-        logger.debug(f"Load {task_details['type']} model: num_labels={task_details['num_labels']}")
+        num_labels = len(train_dataset[0]["labels"]) if task_details['type'] == "multi_variable_regression" else task_details["num_labels"]
+        logger.debug(f"Load {task_details['type']} model: num_labels={num_labels}")
         if task_details["type"] == "binary_classification":
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
                         cache_dir=training_args.cache_dir,
-                        num_labels=task_details["num_labels"],
+                        num_labels=num_labels,
                         trust_remote_code=True,
                     )
         else:
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
-                        num_labels=task_details["num_labels"],
+                        num_labels=num_labels,
                         problem_type="regression",
                         trust_remote_code=True
                     )
