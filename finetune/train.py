@@ -219,7 +219,7 @@ def pgb_dataset(
 def get_compute_metrics(task_type: str):
     def compute_metrics(pred):
         labels = pred.label_ids
-        preds = pred.predictions.argmax(-1) if task_type == "classification" else pred.predictions.squeeze()
+        preds = pred.predictions.argmax(-1) if task_type == "binary_classification" else pred.predictions.squeeze()
 
         try:
             if task_type == "binary_classification":
