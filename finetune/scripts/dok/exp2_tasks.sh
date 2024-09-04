@@ -5,7 +5,6 @@ set -e
 tasks=(
     "promoter_strength"
     "terminator_strength"
-    "lncrna"
     "poly_a"
 )
 
