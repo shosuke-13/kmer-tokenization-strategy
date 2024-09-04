@@ -15,7 +15,7 @@ models=(
 for model in "${models[@]}"
 do
     python train.py \
-            --hf_model_path "$MODEL" \
+            --hf_model_path "$model" \
             --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
             --task_name "gene_exp" \
             --output_dir "$SAKURA_ARTIFACT_DIR" \

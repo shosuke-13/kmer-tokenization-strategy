@@ -25,7 +25,7 @@ python train.py \
     --logging_steps 10000 \
     --fp16 True \
     --report_to "wandb" \
-    --seed "$seed"
+    --seed 42
 
 
 # IA3
@@ -48,4 +48,4 @@ python train.py \
     --logging_steps 10000 \
     --fp16 True \
     --report_to "wandb" \
-    --seed "$seed"
+    --seed 42

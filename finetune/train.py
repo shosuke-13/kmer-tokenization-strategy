@@ -279,21 +279,20 @@ def save_results(
     df.to_csv(csv_buffer, index=False)
     
     # upload to S3
-    s3_client = boto3.client('s3')
+    with boto3.client('s3') as s3_client:
+        # predictions
+        s3_client.put_object(
+            Bucket="pmb_2024", 
+            Key=key_path, 
+            Body=csv_buffer.getvalue()
+        )
 
-    # predictions
-    s3_client.put_object(
-        Bucket="pmb_2024", 
-        Key=key_path, 
-        Body=csv_buffer.getvalue()
-    )
-
-    # metrics results (json)
-    s3_client.put_object(
-        Bucket="pmb_2024", 
-        Key=key_path.replace("predictions.csv", "results.json"), 
-        Body=json.dumps(results)
-    )
+        # metrics results (json)
+        s3_client.put_object(
+            Bucket="pmb_2024", 
+            Key=key_path.replace("predictions.csv", "results.json"), 
+            Body=json.dumps(results)
+        )
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
