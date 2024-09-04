@@ -263,26 +263,28 @@ def save_results(
     df = pd.DataFrame({"name": names})
 
     # save actual values and predictions
-    if len(df["true_labels"].shape) > 1:
-        # multi-label regression
+    if task_type == "single_variable_regression":
+        df["true_label"] = predictions.true_labels
+        df["pred_label"] = predictions.pred_labels
+    elif task_type == "multi_variable_regression":
         for i in range(predictions.true_labels.shape[1]):
             df[f"true_label_{i}"] = predictions.true_labels[:, i]
             df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
     else:
-        # binary classification and single-label regression
+        # binary classification
         df["true_label"] = predictions.true_labels
         df["pred_label"] = predictions.pred_labels
-
-        if task_type == "binary_classification":
-            # binary classification
-            df["pred_score_0"] = predictions[:, 0]
-            df["pred_score_1"] = predictions[:, 1]
-
-    csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False)
+        df["pred_score_0"] = predictions[:, 0]
+        df["pred_score_1"] = predictions[:, 1]
     
     # upload to S3
-    with boto3.client('s3') as s3_client:
+    try:
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 client for csv uploading
+        s3_client = boto3.client('s3')
+        
         # predictions
         s3_client.put_object(
             Bucket=bucket_name, 
@@ -291,11 +293,15 @@ def save_results(
         )
 
         # metrics results (json)
+        results_key = key_path.replace("predictions.csv", "results.json")
         s3_client.put_object(
             Bucket=bucket_name, 
-            Key=key_path.replace("predictions.csv", "results.json"), 
+            Key=results_key, 
             Body=json.dumps(results)
         )
+    except Exception as e:
+        logger.error(f"Error saving results to S3: {e}")
+        sys.exit(1)
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
