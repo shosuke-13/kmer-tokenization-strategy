@@ -21,7 +21,7 @@ do
         --warmup_ratio 0.1 \
         --save_strategy "epoch" \
         --evaluation_strategy "epoch" \
-        --logging_steps 1000 \
+        --logging_steps 10000 \
         --fp16 True \
         --report_to "wandb"
 done
@@ -46,7 +46,7 @@ do
         --warmup_ratio 0.1 \
         --save_strategy "epoch" \
         --evaluation_strategy "epoch" \
-        --logging_steps 1000 \
+        --logging_steps 10000 \
         --fp16 True \
         --report_to "wandb"
 done
