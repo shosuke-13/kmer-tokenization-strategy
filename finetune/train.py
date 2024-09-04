@@ -1,5 +1,6 @@
 import os
 import sys
+import io
 import json
 import time
 import yaml
@@ -8,6 +9,7 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Tuple, List, Any
 
+import boto3
 import wandb
 import torch
 import numpy as np
@@ -245,7 +247,13 @@ def get_compute_metrics(task_type: str):
     return compute_metrics
 
 
-def save_results(predictions, task_type: str, out_dir: str, names: List[str]) -> None:
+def save_results(
+        predictions, 
+        data_args: DataArguments,
+        model_args: ModelArguments,
+        task_type: str, 
+        names: List[str]
+    ) -> None:
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
 
@@ -263,7 +271,16 @@ def save_results(predictions, task_type: str, out_dir: str, names: List[str]) ->
             df[f"true_label_{i}"] = predictions.true_labels[:, i]
             df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
 
-    df.to_parquet(os.path.join(out_dir, "predictions.parquet"), index=False)
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    
+    # upload to S3
+    s3_client = boto3.client('s3')
+    s3_client.put_object(
+        Bucket=os.environ.get('S3_BUCKET_NAME', "pmb2024"), 
+        Key=os.path.join(model_args.hf_model_path, f"{data_args.task_name}_predictions.csv"), 
+        Body=csv_buffer.getvalue()
+    )
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
@@ -492,8 +509,9 @@ def train(
             pred = trainer.predict(test_dataset)
             save_results(
                 pred, 
+                data_args,
+                model_args,
                 task_details["type"], 
-                training_args.output_dir, 
                 test_dataset["name"]
             )
 
