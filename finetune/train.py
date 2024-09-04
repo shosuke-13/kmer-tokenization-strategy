@@ -254,6 +254,7 @@ def get_compute_metrics(task_type: str):
 def save_results(
         predictions, 
         key_path: str,
+        bucket_name: str,
         task_type: str, 
         names: List[str],
         results: Dict[str, Any]
@@ -284,14 +285,14 @@ def save_results(
     with boto3.client('s3') as s3_client:
         # predictions
         s3_client.put_object(
-            Bucket="pmb_2024", 
+            Bucket=bucket_name, 
             Key=key_path, 
             Body=csv_buffer.getvalue()
         )
 
         # metrics results (json)
         s3_client.put_object(
-            Bucket="pmb_2024", 
+            Bucket=bucket_name, 
             Key=key_path.replace("predictions.csv", "results.json"), 
             Body=json.dumps(results)
         )
@@ -343,6 +344,7 @@ def calculate_r2_scores_by_experiment(
             r2_scores[suffix] = calculate_r2_score(filtered_df)
     
     return r2_scores
+
 
 def calculate_r2_score(df: pd.DataFrame) -> float:
     if df.empty:
@@ -524,20 +526,22 @@ def train(
             pred = trainer.predict(test_dataset)
 
             # ex.) agro-nucleotide-transformer-1b/terminator_strength/42/predictions.csv
+            bucket_name = os.environ.get("S3_BUCKET_NAME", "pmb2024-experiments")
             key_path = os.path.join(
                 model_args.hf_model_path, 
                 data_args.task_name,
-                training_args.seed,
-                f"predictions.csv"
+                str(training_args.seed),
+                "predictions.csv"
             )
 
             # save metrics and predictions to S3
             save_results(
                 pred, 
-                key_path,
+                key_path, # S3 key
+                bucket_name, # S3 bucket
                 task_details["type"], 
                 test_dataset["name"],
-                results
+                results # metrics
             )
 
 
