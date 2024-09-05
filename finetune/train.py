@@ -252,31 +252,33 @@ def get_compute_metrics(task_type: str):
 
 
 def save_results(
-        predictions, 
+        predictions,
         key_path: str,
         bucket_name: str,
-        task_type: str, 
+        task_type: str,
         names: List[str],
         results: Dict[str, Any]
     ) -> None:
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
-
-    # save actual values and predictions
+    
+    # save predictions and true labels 
     if task_type == "single_variable_regression":
-        df["true_label"] = predictions.true_labels
-        df["pred_label"] = predictions.pred_labels
+        df["true_label"] = predictions.label_ids
+        df["pred_label"] = predictions.predictions.squeeze()
     elif task_type == "multi_variable_regression":
-        for i in range(predictions.true_labels.shape[1]):
-            df[f"true_label_{i}"] = predictions.true_labels[:, i]
-            df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
+        true_labels = predictions.label_ids
+        pred_labels = predictions.predictions
+        for i in range(pred_labels.shape[1]):
+            df[f"true_label_{i}"] = true_labels[:, i]
+            df[f"pred_label_{i}"] = pred_labels[:, i]
     else:
         # binary classification
-        df["true_label"] = predictions.true_labels
-        df["pred_label"] = predictions.pred_labels
-        df["pred_score_0"] = predictions[:, 0]
-        df["pred_score_1"] = predictions[:, 1]
-    
+        df["true_label"] = predictions.label_ids
+        df["pred_label"] = predictions.predictions.argmax(axis=1)
+        df["pred_score_0"] = predictions.predictions[:, 0]
+        df["pred_score_1"] = predictions.predictions[:, 1]
+
     # upload to S3
     try:
         csv_buffer = io.StringIO()
