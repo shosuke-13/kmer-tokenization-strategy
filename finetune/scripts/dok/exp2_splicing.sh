@@ -36,5 +36,5 @@ do
         --logging_steps 15000 \
         --fp16 True \
         --report_to "wandb" \
-        --seed "$SEED$"
+        --seed "$SEED"
 done
