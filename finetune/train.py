@@ -306,13 +306,13 @@ def save_results(
         sys.exit(1)
 
 
-def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
+def generate_unique_run_name(hf_model_path: str, task_name: str, use_peft: str) -> str:
     """unique run name for tracking experiments."""
     timestamp = int(time.time())
     hash_input = f"{hf_model_path}_{task_name}_{timestamp}"
     hash_value = hashlib.md5(hash_input.encode()).hexdigest()[:8]
     model_name = hf_model_path.split("/")[-1]
-    return f"{model_name}_{task_name}_{hash_value}"
+    return f"{model_name}_{task_name}_{use_peft}_{hash_value}"
 
 
 def get_callbacks(model_args):
@@ -533,12 +533,14 @@ def train(
         if data_args.is_save_predictions:
             pred = trainer.predict(test_dataset)
 
-            # ex.) agro-nucleotide-transformer-1b/terminator_strength/42/predictions.csv
+            # ex.) agro-nucleotide-transformer-1b/lora/terminator_strength/seed-42/predictions.csv
             bucket_name = os.environ.get("S3_BUCKET_NAME", "pmb2024-experiments")
+            use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
             key_path = os.path.join(
-                model_args.hf_model_path, 
+                model_args.hf_model_path.split("/")[-1], 
+                use_peft,
                 data_args.task_name,
-                str(training_args.seed),
+                f"seed-{str(training_args.seed)}",
                 "predictions.csv"
             )
 
@@ -606,13 +608,14 @@ def main():
     wandb_api_key = os.environ.get("WANDB_API_KEY")
     logger.debug(f"Task details: {task_details}")
 
+    use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
     if data_args.do_all_tasks: # train on all tasks
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
             
             # initialize wandb
-            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
             run = init_wandb(wandb_api_key, data_args.project_name, run_name)
 
             logger.info(f"Current task name: {data_args.task_name}")
@@ -637,7 +640,7 @@ def main():
         logger.info("Train on single task.")
 
         # initialize wandb
-        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
         run = init_wandb(wandb_api_key, data_args.project_name, run_name)
 
         train(

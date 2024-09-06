@@ -10,19 +10,19 @@ tasks=(
 
 # nucleotide-transformer models
 models=(
+    "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
+    "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
     "InstaDeepAI/nucleotide-transformer-500m-human-ref"
     "InstaDeepAI/nucleotide-transformer-500m-1000g"
-    "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
-    "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
     "InstaDeepAI/agro-nucleotide-transformer-1b"
 )
 
 # 80 tasks
 # (IA)^3 LR=3e-3 
 # (3e-3, paper) Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning
-for task in "${tasks[@]}"
+for model in "${models[@]}"
 do
-    for model in "${models[@]}"
+    for task in "${tasks[@]}"
     do
         for seed in {40..44}
         do
@@ -42,7 +42,7 @@ do
                 --warmup_ratio 0.1 \
                 --save_strategy "epoch" \
                 --evaluation_strategy "epoch" \
-                --logging_steps 10000 \
+                --logging_steps 15000 \
                 --fp16 True \
                 --report_to "wandb" \
                 --seed "$seed"
