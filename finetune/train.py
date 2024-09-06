@@ -252,58 +252,67 @@ def get_compute_metrics(task_type: str):
 
 
 def save_results(
-        predictions, 
+        predictions,
         key_path: str,
-        task_type: str, 
+        bucket_name: str,
+        task_type: str,
         names: List[str],
         results: Dict[str, Any]
     ) -> None:
     """Save observed and predicted values."""
     df = pd.DataFrame({"name": names})
-
-    # save actual values and predictions
-    if len(df["true_labels"].shape) > 1:
-        # multi-label regression
-        for i in range(predictions.true_labels.shape[1]):
-            df[f"true_label_{i}"] = predictions.true_labels[:, i]
-            df[f"pred_label_{i}"] = predictions.pred_labels[:, i]
-    else:
-        # binary classification and single-label regression
-        df["true_label"] = predictions.true_labels
-        df["pred_label"] = predictions.pred_labels
-
-        if task_type == "binary_classification":
-            # binary classification
-            df["pred_score_0"] = predictions[:, 0]
-            df["pred_score_1"] = predictions[:, 1]
-
-    csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False)
     
+    # save predictions and true labels 
+    if task_type == "single_variable_regression":
+        df["true_label"] = predictions.label_ids
+        df["pred_label"] = predictions.predictions.squeeze()
+    elif task_type == "multi_variable_regression":
+        true_labels = predictions.label_ids
+        pred_labels = predictions.predictions
+        for i in range(pred_labels.shape[1]):
+            df[f"true_label_{i}"] = true_labels[:, i]
+            df[f"pred_label_{i}"] = pred_labels[:, i]
+    else:
+        # binary classification
+        df["true_label"] = predictions.label_ids
+        df["pred_label"] = predictions.predictions.argmax(axis=1)
+        df["pred_score_0"] = predictions.predictions[:, 0]
+        df["pred_score_1"] = predictions.predictions[:, 1]
+
     # upload to S3
-    with boto3.client('s3') as s3_client:
+    try:
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+
+        # S3 client for csv uploading
+        s3_client = boto3.client('s3')
+        
         # predictions
         s3_client.put_object(
-            Bucket="pmb_2024", 
+            Bucket=bucket_name, 
             Key=key_path, 
             Body=csv_buffer.getvalue()
         )
 
         # metrics results (json)
+        results_key = key_path.replace("predictions.csv", "results.json")
         s3_client.put_object(
-            Bucket="pmb_2024", 
-            Key=key_path.replace("predictions.csv", "results.json"), 
+            Bucket=bucket_name, 
+            Key=results_key, 
             Body=json.dumps(results)
         )
+    except Exception as e:
+        logger.error(f"Error saving results to S3: {e}")
+        sys.exit(1)
 
 
-def generate_unique_run_name(hf_model_path: str, task_name: str) -> str:
+def generate_unique_run_name(hf_model_path: str, task_name: str, use_peft: str) -> str:
     """unique run name for tracking experiments."""
     timestamp = int(time.time())
     hash_input = f"{hf_model_path}_{task_name}_{timestamp}"
     hash_value = hashlib.md5(hash_input.encode()).hexdigest()[:8]
     model_name = hf_model_path.split("/")[-1]
-    return f"{model_name}_{task_name}_{hash_value}"
+    return f"{model_name}_{task_name}_{use_peft}_{hash_value}"
 
 
 def get_callbacks(model_args):
@@ -343,6 +352,7 @@ def calculate_r2_scores_by_experiment(
             r2_scores[suffix] = calculate_r2_score(filtered_df)
     
     return r2_scores
+
 
 def calculate_r2_score(df: pd.DataFrame) -> float:
     if df.empty:
@@ -523,21 +533,25 @@ def train(
         if data_args.is_save_predictions:
             pred = trainer.predict(test_dataset)
 
-            # ex.) agro-nucleotide-transformer-1b/terminator_strength/42/predictions.csv
+            # ex.) agro-nucleotide-transformer-1b/lora/terminator_strength/seed-42/predictions.csv
+            bucket_name = os.environ.get("S3_BUCKET_NAME", "pmb2024-experiments")
+            use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
             key_path = os.path.join(
-                model_args.hf_model_path, 
+                model_args.hf_model_path.split("/")[-1], 
+                use_peft,
                 data_args.task_name,
-                training_args.seed,
-                f"predictions.csv"
+                f"seed-{str(training_args.seed)}",
+                "predictions.csv"
             )
 
             # save metrics and predictions to S3
             save_results(
                 pred, 
-                key_path,
+                key_path, # S3 key
+                bucket_name, # S3 bucket
                 task_details["type"], 
                 test_dataset["name"],
-                results
+                results # metrics
             )
 
 
@@ -594,13 +608,14 @@ def main():
     wandb_api_key = os.environ.get("WANDB_API_KEY")
     logger.debug(f"Task details: {task_details}")
 
+    use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
     if data_args.do_all_tasks: # train on all tasks
         logger.info("Train on all tasks.")
         for detail_name in task_details["tasks"]:
             data_args.task_name = data_args.task_name + "." + detail_name
             
             # initialize wandb
-            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+            run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
             run = init_wandb(wandb_api_key, data_args.project_name, run_name)
 
             logger.info(f"Current task name: {data_args.task_name}")
@@ -625,7 +640,7 @@ def main():
         logger.info("Train on single task.")
 
         # initialize wandb
-        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name)
+        run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
         run = init_wandb(wandb_api_key, data_args.project_name, run_name)
 
         train(

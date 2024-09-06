@@ -10,19 +10,17 @@ tasks=(
 
 # nucleotide-transformer models
 models=(
+    "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
+    "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
     "InstaDeepAI/nucleotide-transformer-500m-human-ref"
     "InstaDeepAI/nucleotide-transformer-500m-1000g"
-    "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
-    "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
     "InstaDeepAI/agro-nucleotide-transformer-1b"
 )
 
 # 80 tasks
-# (IA)^3 LR=3e-3 
-# (3e-3, paper) Few-Shot Parameter-Efficient Fine-Tuning is Better and Cheaper than In-Context Learning
-for task in "${tasks[@]}"
+for model in "${models[@]}"
 do
-    for model in "${models[@]}"
+    for task in "${tasks[@]}"
     do
         for seed in {40..44}
         do
@@ -32,17 +30,17 @@ do
                 --task_name "$task" \
                 --output_dir "$SAKURA_ARTIFACT_DIR" \
                 --project_name "$PROJECT_NAME" \
-                --use_lora False \
-                --use_ia3 True \
+                --use_lora True \
+                --use_ia3 False \
                 --use_nt_kmer True \
                 --per_device_train_batch_size "$BATCH_SIZE" \
                 --per_device_eval_batch_size "$BATCH_SIZE" \
                 --num_train_epochs "$EPOCHS" \
-                --learning_rate 3e-3 \
+                --learning_rate 1e-4 \
                 --warmup_ratio 0.1 \
                 --save_strategy "epoch" \
                 --evaluation_strategy "epoch" \
-                --logging_steps 10000 \
+                --logging_steps 15000 \
                 --fp16 True \
                 --report_to "wandb" \
                 --seed "$seed"
