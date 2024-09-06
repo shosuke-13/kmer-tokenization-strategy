@@ -135,7 +135,7 @@ class TrainingArguments(transformers.TrainingArguments):
     output_dir            : str  = field(default="output")
     
     # Miscellaneous settings
-    gradient_accumulation_steps: int = field(default=8)
+    gradient_accumulation_steps: int = field(default=4)
     find_unused_parameters: bool = field(default=False)
     checkpointing         : bool = field(default=False)
     dataloader_pin_memory : bool = field(default=False)
