@@ -3,6 +3,10 @@ set -e
 
 # nucleotide-transformer models
 models=(
+    "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
+    "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"
+    "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species"
+    "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species"
     "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
     "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
     "InstaDeepAI/nucleotide-transformer-500m-human-ref"
@@ -32,5 +36,5 @@ do
         --logging_steps 15000 \
         --fp16 True \
         --report_to "wandb" \
-        --seed 42
+        --seed "$SEED$"
 done
