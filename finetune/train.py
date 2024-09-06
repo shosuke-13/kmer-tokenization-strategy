@@ -114,7 +114,7 @@ class TrainingArguments(transformers.TrainingArguments):
     num_train_epochs           : int = field(default=1)
     
     # Precision settings
-    fp16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
+    fp16               : bool = field(default=True, metadata={"help": "Whether to use 16-bit precision"})
     bf16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
     
     # Logging and evaluation settings
@@ -135,7 +135,7 @@ class TrainingArguments(transformers.TrainingArguments):
     output_dir            : str  = field(default="output")
     
     # Miscellaneous settings
-    gradient_accumulation_steps: int = field(default=4)
+    gradient_accumulation_steps: int = field(default=8)
     find_unused_parameters: bool = field(default=False)
     checkpointing         : bool = field(default=False)
     dataloader_pin_memory : bool = field(default=False)
