@@ -3,11 +3,10 @@ set -e
 
 # nucleotide-transformer models
 models=(
-    "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
-    "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"
-    "InstaDeepAI/nucleotide-transformer-v2-500m-multi-species"
-    "InstaDeepAI/nucleotide-transformer-v2-250m-multi-species"
-    "InstaDeepAI/agro-nucleotide-transformer-1b"
+    "InstaDeepAI/nucleotide-transformer-2.5b-multi-species"
+    "InstaDeepAI/nucleotide-transformer-2.5b-1000g"
+    "InstaDeepAI/nucleotide-transformer-500m-human-ref"
+    "InstaDeepAI/nucleotide-transformer-500m-1000g"
 )
 
 # 10 tasks
