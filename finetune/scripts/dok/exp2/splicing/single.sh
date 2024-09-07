@@ -12,7 +12,7 @@ python train.py \
     --use_nt_kmer True \
     --per_device_train_batch_size "$BATCH_SIZE" \
     --per_device_eval_batch_size "$BATCH_SIZE" \
-    --num_train_epochs 3 \
+    --num_train_epochs 2 \
     --learning_rate 1e-4 \
     --warmup_ratio 0.1 \
     --save_strategy "epoch" \
@@ -22,4 +22,4 @@ python train.py \
     --report_to "wandb" \
     --seed "$SEED" \
     --is_save_predictions True \
-    --gradient_accumulation_steps 32
+    --gradient_accumulation_steps 4
