@@ -94,7 +94,7 @@ class DataArguments:
     project_name       : str  = field(default="hf-peft", metadata={"help": "Weights & Biases project name"})
     
     # Data processing
-    is_save_predictions: bool  = field(default=True, metadata={"help": "Whether to save predictions"})
+    is_save_predictions: bool  = field(default=False, metadata={"help": "Whether to save predictions"})
     test_size          : float = field(default=0.1, metadata={"help": "Test size for train-test split"})
     val_split_seed     : int   = field(default=42, metadata={"help": "Seed for train-test split"})
 
@@ -114,7 +114,7 @@ class TrainingArguments(transformers.TrainingArguments):
     num_train_epochs           : int = field(default=1)
     
     # Precision settings
-    fp16               : bool = field(default=True, metadata={"help": "Whether to use 16-bit precision"})
+    fp16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
     bf16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
     
     # Logging and evaluation settings
@@ -225,11 +225,10 @@ def pgb_dataset(
 
 def get_compute_metrics(task_type: str):
     def compute_metrics(pred):
-        labels = pred.label_ids
-        preds = pred.predictions.argmax(-1) if task_type == "binary_classification" else pred.predictions.squeeze()
-
+        logits, labels = pred
         try:
             if task_type == "binary_classification":
+                preds = logits.argmax(-1)
                 precision, recall, _ = precision_recall_curve(labels, preds)
                 return {
                     "accuracy": accuracy_score(labels, preds),
@@ -240,12 +239,23 @@ def get_compute_metrics(task_type: str):
                     "roc_auc": roc_auc_score(labels, preds),
                     "pr_auc": auc(recall, precision),
                 }
-            else:
-                return {
+            elif task_type in ["single_variable_regression", "multi_variable_regression"]:
+                preds = logits.squeeze() if task_type == "single_variable_regression" else logits
+                metrics = {
                     "mse": mean_squared_error(labels, preds),
+                    "rmse": np.sqrt(mean_squared_error(labels, preds)),
                     "mae": mean_absolute_error(labels, preds),
-                    "r2": r2_score(labels, preds),
+                    "r2": r2_score(labels, preds)
                 }
+                
+                # R2 scores for each variable  
+                if task_type == "multi_variable_regression":
+                    for i in range(labels.shape[1]):
+                        metrics[f"r2_var_{i}"] = r2_score(labels[:, i], preds[:, i])
+                
+                return metrics
+            else:
+                raise ValueError(f"Unsupported task type: {task_type}")
         except Exception as e:
             logger.error(f"Error computing metrics: {e}")
             sys.exit(1)
@@ -304,7 +314,6 @@ def save_results(
         )
     except Exception as e:
         logger.error(f"Error saving results to S3: {e}")
-        sys.exit(1)
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str, use_peft: str) -> str:
@@ -419,8 +428,28 @@ def train(
         task_details: Dict[str, Any],
         run: Optional[wandb.sdk.wandb_run.Run] = None
     ) -> None:
-    """Train and evaluate model."""
+    """Train and evaluate model.
 
+    1. Load benchmark dataset
+    2. Load model
+    3. Configure PEFT (LoRA/IA3)
+    4. Define trainer
+    5. Train model
+    6. Save evaluation results
+    7. Save prediction values
+
+    Args:
+        model_args (ModelArguments): model arguments
+        data_args (DataArguments): data arguments
+        training_args (TrainingArguments): training arguments
+        tokenizer (transformers.PreTrainedTokenizer): tokenizer
+        task_details (Dict[str, Any]): task details
+        run (Optional[wandb.sdk.wandb_run.Run], optional): wandb run. Defaults to None.
+    Returns:
+        None
+    """
+
+    # load plant-genomic-benchmark dataset
     train_dataset, eval_dataset, test_dataset = pgb_dataset(
         data_args=data_args,
         training_args=training_args,
@@ -440,6 +469,7 @@ def train(
                         trust_remote_code=True,
                     )
         else:
+            # single_variable_regression or multi_variable_regression
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
                         num_labels=num_labels,

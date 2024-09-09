@@ -51,4 +51,9 @@ pgb_tasks:
       - solanum_lycopersicum
       - oryza_sativa
       - zea_mays
-    
+  enhancer_region:
+    type: binary_classification
+    num_labels: 2
+    max_seq_len: 1000
+    tasks:
+      - pro_seq.m_esculenta

@@ -18,7 +18,7 @@ do
                         python train.py \
                             --hf_model_path InstaDeepAI/agro-nucleotide-transformer-1b \
                             --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
-                            --task_name data \
+                            --task_name "$data" \
                             --output_dir "$OUTPUT_DIR" \
                             --project_name Plant-Molecular-Biology-2024 \
                             --use_lora True \
