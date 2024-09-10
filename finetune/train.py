@@ -101,7 +101,7 @@ class TrainingArguments(transformers.TrainingArguments):
     cache_dir          : Optional[str] = field(default=None)
     run_name           : str  = field(default="run", metadata={"help": "Name of the training run"})
     optim              : str  = field(default="adamw_torch", metadata={"help": "Optimizer to use"})
-    model_max_length   : int  = field(default=512, metadata={"help": "Maximum sequence length"})
+    model_max_length   : int  = field(default=1024, metadata={"help": "Maximum sequence length"})
     
     # Batch and epoch settings
     gradient_accumulation_steps: int = field(default=1)
@@ -572,7 +572,7 @@ def train(
                 tissues, num_rows, num_cols = get_tissue_names(data_args.task_name.split(".")[-1])
 
                 output_dir = training_args.output_dir
-                
+
                 plot_averages(pred, output_dir)
                 plot_tissue_specific(pred, output_dir, tissues, num_rows=num_rows, num_cols=num_cols)
                 plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side')
