@@ -39,11 +39,7 @@ from peft import (
 from loguru import logger
 
 from kmer import KmerTokenizer
-
-
-from dataclasses import dataclass, field
-from typing import Optional, List
-import transformers
+from visualize import plot_averages, plot_tissue_specific, plot_expression_profiles
 
 
 @dataclass
@@ -420,6 +416,23 @@ def log_metrics_to_wandb(
         raise
 
 
+def get_tissue_names(species_name: str = None) -> Tuple[List[str], int, int]:
+    # get tissue names
+    try:
+        with open("../expression_tissues", 'r') as file:
+                config = yaml.safe_load(file)[species_name]
+
+        tissues = config["tissues"]
+        num_rows = config["num_rows"]
+        num_cols = config["num_cols"]
+
+        logger.success("Tissue names loaded successfully")
+    except FileNotFoundError:
+        logger.error("Tissue names yaml file is not found")
+        sys.exit(1)
+    
+    return tissues, num_rows, num_cols
+
 def train(
         model_args: ModelArguments, 
         data_args: DataArguments, 
@@ -550,6 +563,32 @@ def train(
             r2_scores = calculate_r2_scores_by_experiment(trainer, test_dataset)
             results.update(r2_scores)
             logger.info(f"R2 scores: {r2_scores}")
+
+        try:
+            if data_args.task_name.startswith == "gene_exp":
+                logger.info("Running visualization functions for gene expression")
+
+                pred = trainer.predict(test_dataset)
+                tissues, num_rows, num_cols = get_tissue_names(data_args.task_name.split(".")[-1])
+
+                output_dir = training_args.output_dir
+                
+                plot_averages(pred, output_dir)
+                plot_tissue_specific(pred, output_dir, tissues, num_rows=num_rows, num_cols=num_cols)
+                plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side')
+                plot_expression_profiles(pred, tissues, output_dir, mode='separate')
+
+                # save wandb images
+                logger.info("Logging visualization plots to wandb")
+                wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_observed_plot_all_tissues.png"))})
+                wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_observed_plots_tissues.png"))})
+                wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, "tissue_expression_profiles_comparison.png"))})
+                wandb.log({
+                    "true_expression_profiles": wandb.Image(os.path.join(output_dir, "true_expression_profiles.png")),
+                    "predicted_expression_profiles": wandb.Image(os.path.join(output_dir, "predicted_expression_profiles.png"))
+                })
+        except Exception as e:
+            logger.error(f"Error running visualization functions: {e}")
 
         # log metrics to wandb
         log_metrics_to_wandb(
