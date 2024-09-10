@@ -2,61 +2,61 @@ arabidopsis_thaliana:
     num_rows: 7
     num_cols: 8
     tissues:
-        - Flower stage 15 pollen,
-        - Dry seed stage seed,
-        - Seed imbibition stage seed,
-        - Embryo stage 6 seed,
-        - Embryo stage 7 seed,
-        - Embryo stage 9 seed,
-        - Embryo stage 8 seed,
-        - Embryo stage 10 seed,
-        - Flower stage 15 stamen,
-        - Flower stage 15 sepal,
-        - Flower stage 15 petal,
-        - Cell culture root cell culture,
-        - Cell culture root cell culture.1,
-        - Callus egg.cell like callus,
-        - Seedling root tip,
-        - Seedling root upper zone,
-        - Adult root,
-        - Callus plant callus,
-        - Silique stage 5 silique,
-        - Silique stage 4 silique,
-        - Silique stage 1 silique,
-        - Silique stage 2 silique,
-        - Silique stage 3 silique,
-        - Flower stage 15 carpel,
-        - Flower stage 12 flower,
-        - Flower stage 13 flower,
-        - Flower stage 15 flower,
-        - Flower stage 10 flower,
-        - Flower stage 11 flower,
-        - Flower stage 9 flower,
-        - Adult cotyledon,
-        - Adult senescent leaf,
-        - Adult silique septum,
-        - Adult silique valves,
-        - Flower stage 15 flower pedicel,
-        - Adult stem 2nd internode,
-        - Adult stem 1st node,
-        - Seedling hypocotyl,
-        - Adult rosette leaf 1,
-        - Adult rosette leaf 2,
-        - Adult rosette leaf 12,
-        - Seedling cotyledon,
-        - Seedling shoot apical meristem cotyledons and first leaves,
-        - Adult cauline leaf,
-        - Adult rosette leaf 7 distal part,
-        - Adult rosette leaf 7 proximal part,
-        - Adult rosette leaf 7 petiole,
-        - Adult rosette leaf 3,
-        - Adult rosette leaf 4,
-        - Adult rosette leaf 5,
-        - Adult rosette leaf 6,
-        - Adult rosette leaf 8,
-        - Adult rosette leaf 7,
-        - Adult rosette leaf 9,
-        - Adult rosette leaf 11,
+        - Flower stage 15 pollen
+        - Dry seed stage seed
+        - Seed imbibition stage seed
+        - Embryo stage 6 seed
+        - Embryo stage 7 seed
+        - Embryo stage 9 seed
+        - Embryo stage 8 seed
+        - Embryo stage 10 seed
+        - Flower stage 15 stamen
+        - Flower stage 15 sepal
+        - Flower stage 15 petal
+        - Cell culture root cell culture
+        - Cell culture root cell culture.1
+        - Callus egg.cell like callus
+        - Seedling root tip
+        - Seedling root upper zone
+        - Adult root
+        - Callus plant callus
+        - Silique stage 5 silique
+        - Silique stage 4 silique
+        - Silique stage 1 silique
+        - Silique stage 2 silique
+        - Silique stage 3 silique
+        - Flower stage 15 carpel
+        - Flower stage 12 flower
+        - Flower stage 13 flower
+        - Flower stage 15 flower
+        - Flower stage 10 flower
+        - Flower stage 11 flower
+        - Flower stage 9 flower
+        - Adult cotyledon
+        - Adult senescent leaf
+        - Adult silique septum
+        - Adult silique valves
+        - Flower stage 15 flower pedicel
+        - Adult stem 2nd internode
+        - Adult stem 1st node
+        - Seedling hypocotyl
+        - Adult rosette leaf 1
+        - Adult rosette leaf 2
+        - Adult rosette leaf 12
+        - Seedling cotyledon
+        - Seedling shoot apical meristem cotyledons and first leaves
+        - Adult cauline leaf
+        - Adult rosette leaf 7 distal part
+        - Adult rosette leaf 7 proximal part
+        - Adult rosette leaf 7 petiole
+        - Adult rosette leaf 3
+        - Adult rosette leaf 4
+        - Adult rosette leaf 5
+        - Adult rosette leaf 6
+        - Adult rosette leaf 8
+        - Adult rosette leaf 7
+        - Adult rosette leaf 9
+        - Adult rosette leaf 11
         - Adult rosette leaf 10
 glycine_max:
     num_rows: 4

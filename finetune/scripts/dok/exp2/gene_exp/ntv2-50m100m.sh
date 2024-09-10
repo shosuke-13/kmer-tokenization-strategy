@@ -1,19 +1,18 @@
 #!/bin/bash
 set -e
 
-# plant-genomic-benchmark
-tasks=(
-    "promoter_strength"
-    "terminator_strength"
-    "poly_a"
+# nucleotide-transformer models
+models=(
+    "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
+    "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"
 )
 
-for task in "${tasks[@]}"
+for model in "${models[@]}"
 do
     python train.py \
-        --hf_model_path "$MODEL" \
+        --hf_model_path "$model" \
         --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
-        --task_name "$task" \
+        --task_name "gene_exp" \
         --output_dir "$SAKURA_ARTIFACT_DIR" \
         --project_name "$PROJECT_NAME" \
         --use_lora True \
@@ -30,6 +29,6 @@ do
         --fp16 True \
         --report_to "wandb" \
         --seed "$SEED" \
-        --is_save_predictions False \
+        --is_save_predictions True \
         --gradient_accumulation_steps 4
 done
