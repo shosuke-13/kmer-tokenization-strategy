@@ -20,7 +20,7 @@ do
     python train.py \
         --hf_model_path "$model" \
         --hf_dataset_repo InstaDeepAI/plant-genomic-benchmark \
-        --task_name "enhancer_region" \
+        --task_name "pro_seq" \
         --output_dir "$SAKURA_ARTIFACT_DIR" \
         --project_name "$PROJECT_NAME" \
         --use_lora True \
