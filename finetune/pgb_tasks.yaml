@@ -44,7 +44,7 @@ pgb_tasks:
       - protoplast
   gene_exp:
     type: multi_variable_regression
-    max_seq_len: 1024
+    max_seq_len: 6000
     tasks:
       - arabidopsis_thaliana
       - glycine_max
