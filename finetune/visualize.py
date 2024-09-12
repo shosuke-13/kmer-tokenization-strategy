@@ -55,7 +55,7 @@ def plot_averages(preds: Tuple[np.ndarray, np.ndarray], output_dir: str) -> None
         spine.set_edgecolor('black')
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plot_output = os.path.join(output_dir, "prediction_Actual_plot_all_tissues.png")
+    plot_output = os.path.join(output_dir, "prediction_actual_plot_all_tissues.png")
     plt.savefig(plot_output, dpi=300, bbox_inches='tight')
     logger.info(f"Prediction-Actual Plot for All Tissues saved to {plot_output}")
     plt.close(fig)
@@ -123,7 +123,7 @@ def plot_tissue_specific(
         axes[row, col].axis("off")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
-    plot_output = os.path.join(output_dir, "prediction_Actual_plots_tissues.png")
+    plot_output = os.path.join(output_dir, "prediction_actual_plots_tissues.png")
     plt.savefig(plot_output, dpi=300, bbox_inches='tight')
     logger.info(f"Prediction-Actual Plots for Tissues saved to {plot_output}")
     plt.close(fig)
@@ -206,5 +206,3 @@ def plot_expression_profiles(
                 plt.savefig(heatmap_output, dpi=300)
                 logger.info(f"{title} saved to {heatmap_output}")
                 plt.close(fig)
-    else:
-        logger.error("Invalid mode. Choose 'side_by_side' or 'separate'.")

@@ -580,8 +580,8 @@ def train(
 
             # save wandb images
             try:
-                wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_observed_plot_all_tissues.png"))})
-                wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_observed_plots_tissues.png"))})
+                wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plot_all_tissues.png"))})
+                wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plots_tissues.png"))})
                 wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, "tissue_expression_profiles_comparison.png"))})
                 wandb.log({
                     "true_expression_profiles": wandb.Image(os.path.join(output_dir, "true_expression_profiles.png")),
