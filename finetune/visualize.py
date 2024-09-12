@@ -132,7 +132,8 @@ def plot_expression_profiles(
         preds: Tuple[np.ndarray, np.ndarray],
         tissues: List[str], 
         output_dir: str, 
-        mode: str = 'side_by_side'
+        mode: str = 'side_by_side',
+        cmap_list: List[str] = ['Blues', 'Purples', 'Greens', 'Reds']
     ) -> None:
     """
     Create heatmaps for tissue expression profiles.
@@ -160,28 +161,28 @@ def plot_expression_profiles(
     np.fill_diagonal(true_distance_matrix.values, 0)
     np.fill_diagonal(pred_distance_matrix.values, 0)
     
-    for color_map in ['Blues', 'Purples', 'Greens', 'Reds']:
+    for color_map in cmap_list:
         if mode == 'side_by_side':
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(40, 16), sharex=True, sharey=True)
             sns.set(font_scale=1.2)
 
             sns.heatmap(true_distance_matrix, cmap=color_map, linewidths=0.5, linecolor="white", square=True,
                         vmin=0, vmax=np.max(true_distance_matrix.values), annot=False, cbar=True, ax=ax1,
-                        cbar_kws={"orientation": "vertical", "shrink": 0.8, "pad": 0.05, "label": "True Euclidean Distance"})
-            # ax1.set_title("True Expression Profiles", fontsize=16)
+                        cbar_kws={"orientation": "vertical", "shrink": 0.8, "pad": 0.05, "label": "Euclidean Distance"}, yticklabels=True)
+            ax1.set_title("True Expression Profiles", fontsize=16)
             ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, fontsize=12)
             ax1.set_yticklabels(ax1.get_yticklabels(), rotation=0, fontsize=12)
 
             sns.heatmap(pred_distance_matrix, cmap=color_map, linewidths=0.5, linecolor="white", square=True,
                         vmin=0, vmax=np.max(pred_distance_matrix.values), annot=False, cbar=True, ax=ax2,
-                        cbar_kws={"orientation": "vertical", "shrink": 0.8, "pad": 0.05, "label": "Predicted Euclidean Distance"})
+                        cbar_kws={"orientation": "vertical", "shrink": 0.8, "pad": 0.05, "label": "Euclidean Distance"}, yticklabels=False)
             ax2.set_title("Predicted Expression Profiles", fontsize=16)
             ax2.set_xticklabels(ax2.get_xticklabels(), rotation=90, fontsize=12)
             ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, fontsize=12)
 
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-            heatmap_output = os.path.join(output_dir, "tissue_expression_profiles_comparison.png")
+            heatmap_output = os.path.join(output_dir, f"tissue_expression_profiles_comparison_{color_map}.png")
             plt.savefig(heatmap_output, dpi=300)
             logger.info(f"Tissue Expression Profiles Comparison saved to {heatmap_output}")
             plt.close(fig)
@@ -189,7 +190,7 @@ def plot_expression_profiles(
         elif mode == 'separate':
             for data, title, filename in zip([true_distance_matrix, pred_distance_matrix],
                                             ["True Expression Profiles", "Predicted Expression Profiles"],
-                                            ["true_expression_profiles.png", "predicted_expression_profiles.png"]):
+                                            [f"true_expression_profiles_{color_map}.png", f"predicted_expression_profiles_{color_map}.png"]):
                 fig, ax = plt.subplots(figsize=(20, 16))
                 sns.set(font_scale=1.2)
 

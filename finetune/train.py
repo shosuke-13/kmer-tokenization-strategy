@@ -575,18 +575,20 @@ def train(
 
             plot_averages(pred, output_dir)
             plot_tissue_specific(pred, output_dir, num_rows, num_cols, tissues)
-            plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side')
-            plot_expression_profiles(pred, tissues, output_dir, mode='separate')
+            plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
+            plot_expression_profiles(pred, tissues, output_dir, mode='separate', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
 
             # save wandb images
             try:
                 wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plot_all_tissues.png"))})
                 wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plots_tissues.png"))})
-                wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, "tissue_expression_profiles_comparison.png"))})
-                wandb.log({
-                    "true_expression_profiles": wandb.Image(os.path.join(output_dir, "true_expression_profiles.png")),
-                    "predicted_expression_profiles": wandb.Image(os.path.join(output_dir, "predicted_expression_profiles.png"))
-                })
+
+                for cmap_color in ['Blues', 'Purples', 'Greens', 'Reds']:
+                    wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, f"tissue_expression_profiles_comparison_{cmap_color}.png"))})
+                    wandb.log({
+                        "true_expression_profiles": wandb.Image(os.path.join(output_dir, f"true_expression_profiles_{cmap_color}.png")),
+                        "predicted_expression_profiles": wandb.Image(os.path.join(output_dir, f"predicted_expression_profiles_{cmap_color}.png"))
+                    })
                 logger.success("Visualization plots logged to wandb.")
             except Exception as e:
                 logger.error(f"Error logging visualization plots to wandb: {e}")
