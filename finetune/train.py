@@ -419,7 +419,7 @@ def log_metrics_to_wandb(
 def get_tissue_names(species_name: str = None) -> Tuple[List[str], int, int]:
     # get tissue names
     try:
-        with open("expression_tissues", 'r') as file:
+        with open("expression_tissues.yaml", 'r') as file:
                 config = yaml.safe_load(file)[species_name]
 
         tissues = config["tissues"]
