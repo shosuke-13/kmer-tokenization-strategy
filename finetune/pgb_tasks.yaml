@@ -44,11 +44,16 @@ pgb_tasks:
       - protoplast
   gene_exp:
     type: multi_variable_regression
-    max_seq_len: 1024
+    max_seq_len: 6000
     tasks:
       - arabidopsis_thaliana
       - glycine_max
       - solanum_lycopersicum
       - oryza_sativa
       - zea_mays
-    
+  pro_seq:
+    type: binary_classification
+    num_labels: 2
+    max_seq_len: 1000
+    tasks:
+      - m_esculenta

@@ -39,11 +39,7 @@ from peft import (
 from loguru import logger
 
 from kmer import KmerTokenizer
-
-
-from dataclasses import dataclass, field
-from typing import Optional, List
-import transformers
+from visualize import plot_averages, plot_tissue_specific, plot_expression_profiles
 
 
 @dataclass
@@ -94,7 +90,7 @@ class DataArguments:
     project_name       : str  = field(default="hf-peft", metadata={"help": "Weights & Biases project name"})
     
     # Data processing
-    is_save_predictions: bool  = field(default=True, metadata={"help": "Whether to save predictions"})
+    is_save_predictions: bool  = field(default=False, metadata={"help": "Whether to save predictions"})
     test_size          : float = field(default=0.1, metadata={"help": "Test size for train-test split"})
     val_split_seed     : int   = field(default=42, metadata={"help": "Seed for train-test split"})
 
@@ -105,7 +101,7 @@ class TrainingArguments(transformers.TrainingArguments):
     cache_dir          : Optional[str] = field(default=None)
     run_name           : str  = field(default="run", metadata={"help": "Name of the training run"})
     optim              : str  = field(default="adamw_torch", metadata={"help": "Optimizer to use"})
-    model_max_length   : int  = field(default=512, metadata={"help": "Maximum sequence length"})
+    model_max_length   : int  = field(default=1024, metadata={"help": "Maximum sequence length"})
     
     # Batch and epoch settings
     gradient_accumulation_steps: int = field(default=1)
@@ -114,7 +110,7 @@ class TrainingArguments(transformers.TrainingArguments):
     num_train_epochs           : int = field(default=1)
     
     # Precision settings
-    fp16               : bool = field(default=True, metadata={"help": "Whether to use 16-bit precision"})
+    fp16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
     bf16               : bool = field(default=False, metadata={"help": "Whether to use 16-bit precision"})
     
     # Logging and evaluation settings
@@ -225,11 +221,10 @@ def pgb_dataset(
 
 def get_compute_metrics(task_type: str):
     def compute_metrics(pred):
-        labels = pred.label_ids
-        preds = pred.predictions.argmax(-1) if task_type == "binary_classification" else pred.predictions.squeeze()
-
+        logits, labels = pred
         try:
             if task_type == "binary_classification":
+                preds = logits.argmax(-1)
                 precision, recall, _ = precision_recall_curve(labels, preds)
                 return {
                     "accuracy": accuracy_score(labels, preds),
@@ -240,12 +235,23 @@ def get_compute_metrics(task_type: str):
                     "roc_auc": roc_auc_score(labels, preds),
                     "pr_auc": auc(recall, precision),
                 }
-            else:
-                return {
+            elif task_type in ["single_variable_regression", "multi_variable_regression"]:
+                preds = logits.squeeze() if task_type == "single_variable_regression" else logits
+                metrics = {
                     "mse": mean_squared_error(labels, preds),
+                    "rmse": np.sqrt(mean_squared_error(labels, preds)),
                     "mae": mean_absolute_error(labels, preds),
-                    "r2": r2_score(labels, preds),
+                    "r2": r2_score(labels, preds)
                 }
+                
+                # R2 scores for each variable  
+                if task_type == "multi_variable_regression":
+                    for i in range(labels.shape[1]):
+                        metrics[f"r2_var_{i}"] = r2_score(labels[:, i], preds[:, i])
+                
+                return metrics
+            else:
+                raise ValueError(f"Unsupported task type: {task_type}")
         except Exception as e:
             logger.error(f"Error computing metrics: {e}")
             sys.exit(1)
@@ -304,7 +310,6 @@ def save_results(
         )
     except Exception as e:
         logger.error(f"Error saving results to S3: {e}")
-        sys.exit(1)
 
 
 def generate_unique_run_name(hf_model_path: str, task_name: str, use_peft: str) -> str:
@@ -411,6 +416,23 @@ def log_metrics_to_wandb(
         raise
 
 
+def get_tissue_names(species_name: str = None) -> Tuple[List[str], int, int]:
+    # get tissue names
+    try:
+        with open("expression_tissues.yaml", 'r') as file:
+                config = yaml.safe_load(file)[species_name]
+
+        tissues = config["tissues"]
+        num_rows = config["num_rows"]
+        num_cols = config["num_cols"]
+
+        logger.success("Tissue names loaded successfully")
+    except FileNotFoundError:
+        logger.error("Tissue names yaml file is not found")
+        sys.exit(1)
+    
+    return tissues, num_rows, num_cols
+
 def train(
         model_args: ModelArguments, 
         data_args: DataArguments, 
@@ -419,8 +441,28 @@ def train(
         task_details: Dict[str, Any],
         run: Optional[wandb.sdk.wandb_run.Run] = None
     ) -> None:
-    """Train and evaluate model."""
+    """Train and evaluate model.
 
+    1. Load benchmark dataset
+    2. Load model
+    3. Configure PEFT (LoRA/IA3)
+    4. Define trainer
+    5. Train model
+    6. Save evaluation results
+    7. Save prediction values
+
+    Args:
+        model_args (ModelArguments): model arguments
+        data_args (DataArguments): data arguments
+        training_args (TrainingArguments): training arguments
+        tokenizer (transformers.PreTrainedTokenizer): tokenizer
+        task_details (Dict[str, Any]): task details
+        run (Optional[wandb.sdk.wandb_run.Run], optional): wandb run. Defaults to None.
+    Returns:
+        None
+    """
+
+    # load plant-genomic-benchmark dataset
     train_dataset, eval_dataset, test_dataset = pgb_dataset(
         data_args=data_args,
         training_args=training_args,
@@ -440,6 +482,7 @@ def train(
                         trust_remote_code=True,
                     )
         else:
+            # single_variable_regression or multi_variable_regression
             model = transformers.AutoModelForSequenceClassification.from_pretrained(
                         model_args.hf_model_path,
                         num_labels=num_labels,
@@ -520,15 +563,38 @@ def train(
             r2_scores = calculate_r2_scores_by_experiment(trainer, test_dataset)
             results.update(r2_scores)
             logger.info(f"R2 scores: {r2_scores}")
+        
+        # plot expression profiles
+        if data_args.task_name.startswith("gene_exp"):
+            logger.info("Running visualization functions for gene expression")
+
+            pred = trainer.predict(test_dataset)
+            tissues, num_rows, num_cols = get_tissue_names(data_args.task_name.split(".")[-1])
+
+            output_dir = training_args.output_dir
+
+            plot_averages(pred, output_dir)
+            plot_tissue_specific(pred, output_dir, num_rows, num_cols, tissues)
+            plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
+            plot_expression_profiles(pred, tissues, output_dir, mode='separate', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
+
+            # save wandb images
+            try:
+                wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plot_all_tissues.png"))})
+                wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plots_tissues.png"))})
+
+                for cmap_color in ['Blues', 'Purples', 'Greens', 'Reds']:
+                    wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, f"tissue_expression_profiles_comparison_{cmap_color}.png"))})
+                    wandb.log({
+                        "true_expression_profiles": wandb.Image(os.path.join(output_dir, f"true_expression_profiles_{cmap_color}.png")),
+                        "predicted_expression_profiles": wandb.Image(os.path.join(output_dir, f"predicted_expression_profiles_{cmap_color}.png"))
+                    })
+                logger.success("Visualization plots logged to wandb.")
+            except Exception as e:
+                logger.error(f"Error logging visualization plots to wandb: {e}")
 
         # log metrics to wandb
-        log_metrics_to_wandb(
-            run,
-            results,
-            model_args, 
-            data_args, 
-            training_args 
-        )
+        log_metrics_to_wandb(run, results, model_args, data_args, training_args)
 
         # save prediction values
         if data_args.is_save_predictions:

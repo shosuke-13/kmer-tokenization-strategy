@@ -1,0 +1,461 @@
+model_name,tokenizer,task_name,subtask_name,score,vocab_size,length_reduction
+BERT,3-mer overlap,splicing,donor,0.95,64,1.0
+BERT,3-mer non-overlap,splicing,donor,0.925,64,3.0
+BERT,4-mer overlap,splicing,donor,0.942,256,1.0
+BERT,4-mer non-overlap,splicing,donor,0.912,256,4.0
+BERT,5-mer overlap,splicing,donor,0.945,1024,1.0
+BERT,5-mer non-overlap,splicing,donor,0.927,1024,5.0
+BERT,6-mer overlap,splicing,donor,0.945,4096,1.0
+BERT,6-mer non-overlap,splicing,donor,0.914,4096,6.0
+BERT,7-mer overlap,splicing,donor,0.929,16384,1.0
+BERT,7-mer non-overlap,splicing,donor,0.899,16384,7.1
+BERT,8-mer overlap,splicing,donor,0.931,65536,1.0
+BERT,8-mer non-overlap,splicing,donor,0.891,65536,8.1
+DNABERT,3-mer overlap,splicing,donor,0.94,64,1.0
+DNABERT,3-mer non-overlap,splicing,donor,0.929,64,3.0
+DNABERT,4-mer overlap,splicing,donor,0.946,256,1.0
+DNABERT,4-mer non-overlap,splicing,donor,0.927,256,4.0
+DNABERT,5-mer overlap,splicing,donor,0.948,1024,1.0
+DNABERT,5-mer non-overlap,splicing,donor,0.916,1024,5.0
+DNABERT,6-mer overlap,splicing,donor,0.948,4096,1.0
+DNABERT,6-mer non-overlap,splicing,donor,0.923,4096,6.0
+AgroNT,6-mer non-overlap,splicing,donor,,4096,6.0
+AgroNT IA3,6-mer non-overlap,splicing,donor,0.964,4096,6.0
+AgroNT LoRA,6-mer non-overlap,splicing,donor,0.964,4096,6.0
+BERT,3-mer overlap,splicing,acceptor,0.935,64,1.0
+BERT,3-mer non-overlap,splicing,acceptor,0.913,64,3.0
+BERT,4-mer overlap,splicing,acceptor,0.932,256,1.0
+BERT,4-mer non-overlap,splicing,acceptor,0.898,256,4.0
+BERT,5-mer overlap,splicing,acceptor,0.935,1024,1.0
+BERT,5-mer non-overlap,splicing,acceptor,0.909,1024,5.0
+BERT,6-mer overlap,splicing,acceptor,0.943,4096,1.0
+BERT,6-mer non-overlap,splicing,acceptor,0.9,4096,6.0
+BERT,7-mer overlap,splicing,acceptor,0.926,16384,1.0
+BERT,7-mer non-overlap,splicing,acceptor,0.878,16384,7.1
+BERT,8-mer overlap,splicing,acceptor,0.924,65536,1.0
+BERT,8-mer non-overlap,splicing,acceptor,0.867,65536,8.1
+DNABERT,3-mer overlap,splicing,acceptor,0.946,64,1.0
+DNABERT,3-mer non-overlap,splicing,acceptor,0.914,64,3.0
+DNABERT,4-mer overlap,splicing,acceptor,0.938,256,1.0
+DNABERT,4-mer non-overlap,splicing,acceptor,0.904,256,4.0
+DNABERT,5-mer overlap,splicing,acceptor,0.942,1024,1.0
+DNABERT,5-mer non-overlap,splicing,acceptor,0.9,1024,5.0
+DNABERT,6-mer overlap,splicing,acceptor,0.945,4096,1.0
+DNABERT,6-mer non-overlap,splicing,acceptor,0.907,4096,6.0
+AgroNT,6-mer non-overlap,splicing,acceptor,,4096,6.0
+AgroNT IA3,6-mer non-overlap,splicing,acceptor,0.959,4096,6.0
+AgroNT LoRA,6-mer non-overlap,splicing,acceptor,0.958,4096,6.0
+BERT,3-mer overlap,poly_a,A.thaliana,0.713,64,1.0
+BERT,3-mer non-overlap,poly_a,A.thaliana,0.695,64,3.0
+BERT,4-mer overlap,poly_a,A.thaliana,0.704,256,1.0
+BERT,4-mer non-overlap,poly_a,A.thaliana,0.681,256,4.0
+BERT,5-mer overlap,poly_a,A.thaliana,0.709,1024,1.0
+BERT,5-mer non-overlap,poly_a,A.thaliana,0.692,1024,5.0
+BERT,6-mer overlap,poly_a,A.thaliana,0.702,4096,1.0
+BERT,6-mer non-overlap,poly_a,A.thaliana,0.675,4096,6.0
+BERT,7-mer overlap,poly_a,A.thaliana,0.685,16384,1.0
+BERT,7-mer non-overlap,poly_a,A.thaliana,0.627,16384,7.0
+BERT,8-mer overlap,poly_a,A.thaliana,0.675,65536,1.0
+BERT,8-mer non-overlap,poly_a,A.thaliana,0.647,65536,8.0
+DNABERT,3-mer overlap,poly_a,A.thaliana,0.69,64,1.0
+DNABERT,3-mer non-overlap,poly_a,A.thaliana,0.688,64,3.0
+DNABERT,4-mer overlap,poly_a,A.thaliana,0.669,256,1.0
+DNABERT,4-mer non-overlap,poly_a,A.thaliana,0.682,256,4.0
+DNABERT,5-mer overlap,poly_a,A.thaliana,0.684,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,A.thaliana,0.682,1024,5.0
+DNABERT,6-mer overlap,poly_a,A.thaliana,0.7,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,A.thaliana,0.686,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,A.thaliana,0.698,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,A.thaliana,0.648,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,A.thaliana,0.69,4096,6.0
+BERT,3-mer overlap,poly_a,O.sativa Indica,0.846,64,1.0
+BERT,3-mer non-overlap,poly_a,O.sativa Indica,0.832,64,3.0
+BERT,4-mer overlap,poly_a,O.sativa Indica,0.848,256,1.0
+BERT,4-mer non-overlap,poly_a,O.sativa Indica,0.821,256,4.0
+BERT,5-mer overlap,poly_a,O.sativa Indica,0.848,1024,1.0
+BERT,5-mer non-overlap,poly_a,O.sativa Indica,0.835,1024,5.0
+BERT,6-mer overlap,poly_a,O.sativa Indica,0.847,4096,1.0
+BERT,6-mer non-overlap,poly_a,O.sativa Indica,0.815,4096,6.0
+BERT,7-mer overlap,poly_a,O.sativa Indica,0.836,16384,1.0
+BERT,7-mer non-overlap,poly_a,O.sativa Indica,0.779,16384,7.0
+BERT,8-mer overlap,poly_a,O.sativa Indica,0.819,65536,1.0
+BERT,8-mer non-overlap,poly_a,O.sativa Indica,0.793,65536,8.0
+DNABERT,3-mer overlap,poly_a,O.sativa Indica,0.835,64,1.0
+DNABERT,3-mer non-overlap,poly_a,O.sativa Indica,0.822,64,3.0
+DNABERT,4-mer overlap,poly_a,O.sativa Indica,0.82,256,1.0
+DNABERT,4-mer non-overlap,poly_a,O.sativa Indica,0.825,256,4.0
+DNABERT,5-mer overlap,poly_a,O.sativa Indica,0.81,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,O.sativa Indica,0.825,1024,5.0
+DNABERT,6-mer overlap,poly_a,O.sativa Indica,0.854,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,O.sativa Indica,0.824,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,O.sativa Indica,0.83,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,O.sativa Indica,0.785,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,O.sativa Indica,0.819,4096,6.0
+BERT,3-mer overlap,poly_a,T.pratense,0.701,64,1.0
+BERT,3-mer non-overlap,poly_a,T.pratense,0.691,64,3.0
+BERT,4-mer overlap,poly_a,T.pratense,0.71,256,1.0
+BERT,4-mer non-overlap,poly_a,T.pratense,0.668,256,4.0
+BERT,5-mer overlap,poly_a,T.pratense,0.706,1024,1.0
+BERT,5-mer non-overlap,poly_a,T.pratense,0.688,1024,5.0
+BERT,6-mer overlap,poly_a,T.pratense,0.7,4096,1.0
+BERT,6-mer non-overlap,poly_a,T.pratense,0.667,4096,6.0
+BERT,7-mer overlap,poly_a,T.pratense,0.663,16384,1.0
+BERT,7-mer non-overlap,poly_a,T.pratense,0.629,16384,7.0
+BERT,8-mer overlap,poly_a,T.pratense,0.675,65536,1.0
+BERT,8-mer non-overlap,poly_a,T.pratense,0.64,65536,8.0
+DNABERT,3-mer overlap,poly_a,T.pratense,0.664,64,1.0
+DNABERT,3-mer non-overlap,poly_a,T.pratense,0.676,64,3.0
+DNABERT,4-mer overlap,poly_a,T.pratense,0.0,256,1.0
+DNABERT,4-mer non-overlap,poly_a,T.pratense,0.665,256,4.0
+DNABERT,5-mer overlap,poly_a,T.pratense,0.0,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,T.pratense,0.665,1024,5.0
+DNABERT,6-mer overlap,poly_a,T.pratense,0.71,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,T.pratense,0.676,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,T.pratense,0.653,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,T.pratense,0.618,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,T.pratense,0.652,4096,6.0
+BERT,3-mer overlap,poly_a,M.truncatula,0.801,64,1.0
+BERT,3-mer non-overlap,poly_a,M.truncatula,0.78,64,3.0
+BERT,4-mer overlap,poly_a,M.truncatula,0.803,256,1.0
+BERT,4-mer non-overlap,poly_a,M.truncatula,0.771,256,4.0
+BERT,5-mer overlap,poly_a,M.truncatula,0.803,1024,1.0
+BERT,5-mer non-overlap,poly_a,M.truncatula,0.777,1024,5.0
+BERT,6-mer overlap,poly_a,M.truncatula,0.792,4096,1.0
+BERT,6-mer non-overlap,poly_a,M.truncatula,0.767,4096,6.0
+BERT,7-mer overlap,poly_a,M.truncatula,0.775,16384,1.0
+BERT,7-mer non-overlap,poly_a,M.truncatula,0.724,16384,7.0
+BERT,8-mer overlap,poly_a,M.truncatula,0.746,65536,1.0
+BERT,8-mer non-overlap,poly_a,M.truncatula,0.74,65536,8.0
+DNABERT,3-mer overlap,poly_a,M.truncatula,0.11,64,1.0
+DNABERT,3-mer non-overlap,poly_a,M.truncatula,0.745,64,3.0
+DNABERT,4-mer overlap,poly_a,M.truncatula,0.0,256,1.0
+DNABERT,4-mer non-overlap,poly_a,M.truncatula,0.736,256,4.0
+DNABERT,5-mer overlap,poly_a,M.truncatula,0.0,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,M.truncatula,0.753,1024,5.0
+DNABERT,6-mer overlap,poly_a,M.truncatula,0.778,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,M.truncatula,0.773,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,M.truncatula,0.789,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,M.truncatula,0.426,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,M.truncatula,0.773,4096,6.0
+BERT,3-mer overlap,poly_a,C.reinharditii,0.807,64,1.0
+BERT,3-mer non-overlap,poly_a,C.reinharditii,0.789,64,3.0
+BERT,4-mer overlap,poly_a,C.reinharditii,0.814,256,1.0
+BERT,4-mer non-overlap,poly_a,C.reinharditii,0.777,256,4.0
+BERT,5-mer overlap,poly_a,C.reinharditii,0.809,1024,1.0
+BERT,5-mer non-overlap,poly_a,C.reinharditii,0.784,1024,5.0
+BERT,6-mer overlap,poly_a,C.reinharditii,0.798,4096,1.0
+BERT,6-mer non-overlap,poly_a,C.reinharditii,0.758,4096,6.0
+BERT,7-mer overlap,poly_a,C.reinharditii,0.783,16384,1.0
+BERT,7-mer non-overlap,poly_a,C.reinharditii,0.718,16384,7.0
+BERT,8-mer overlap,poly_a,C.reinharditii,0.765,65536,1.0
+BERT,8-mer non-overlap,poly_a,C.reinharditii,0.714,65536,8.0
+DNABERT,3-mer overlap,poly_a,C.reinharditii,0.798,64,1.0
+DNABERT,3-mer non-overlap,poly_a,C.reinharditii,0.75,64,3.0
+DNABERT,4-mer overlap,poly_a,C.reinharditii,0.791,256,1.0
+DNABERT,4-mer non-overlap,poly_a,C.reinharditii,0.742,256,4.0
+DNABERT,5-mer overlap,poly_a,C.reinharditii,0.788,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,C.reinharditii,0.77,1024,5.0
+DNABERT,6-mer overlap,poly_a,C.reinharditii,0.804,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,C.reinharditii,0.77,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,C.reinharditii,0.756,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,C.reinharditii,0.703,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,C.reinharditii,0.774,4096,6.0
+BERT,3-mer overlap,poly_a,O.sativa Japonica,0.855,64,1.0
+BERT,3-mer non-overlap,poly_a,O.sativa Japonica,0.839,64,3.0
+BERT,4-mer overlap,poly_a,O.sativa Japonica,0.855,256,1.0
+BERT,4-mer non-overlap,poly_a,O.sativa Japonica,0.826,256,4.0
+BERT,5-mer overlap,poly_a,O.sativa Japonica,0.854,1024,1.0
+BERT,5-mer non-overlap,poly_a,O.sativa Japonica,0.841,1024,5.0
+BERT,6-mer overlap,poly_a,O.sativa Japonica,0.85,4096,1.0
+BERT,6-mer non-overlap,poly_a,O.sativa Japonica,0.829,4096,6.0
+BERT,7-mer overlap,poly_a,O.sativa Japonica,0.833,16384,1.0
+BERT,7-mer non-overlap,poly_a,O.sativa Japonica,0.785,16384,7.0
+BERT,8-mer overlap,poly_a,O.sativa Japonica,0.837,65536,1.0
+BERT,8-mer non-overlap,poly_a,O.sativa Japonica,0.806,65536,8.0
+DNABERT,3-mer overlap,poly_a,O.sativa Japonica,0.844,64,1.0
+DNABERT,3-mer non-overlap,poly_a,O.sativa Japonica,0.842,64,3.0
+DNABERT,4-mer overlap,poly_a,O.sativa Japonica,0.842,256,1.0
+DNABERT,4-mer non-overlap,poly_a,O.sativa Japonica,0.825,256,4.0
+DNABERT,5-mer overlap,poly_a,O.sativa Japonica,0.839,1024,1.0
+DNABERT,5-mer non-overlap,poly_a,O.sativa Japonica,0.828,1024,5.0
+DNABERT,6-mer overlap,poly_a,O.sativa Japonica,0.862,4096,1.0
+DNABERT,6-mer non-overlap,poly_a,O.sativa Japonica,0.831,4096,6.0
+AgroNT,6-mer non-overlap,poly_a,O.sativa Japonica,0.845,4096,6.0
+AgroNT IA3,6-mer non-overlap,poly_a,O.sativa Japonica,0.797,4096,6.0
+AgroNT LoRA,6-mer non-overlap,poly_a,O.sativa Japonica,0.821,4096,6.0
+BERT,3-mer overlap,promoter_strength,Tobacco_A.thaliana,0.573,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.517,64,3.0
+BERT,4-mer overlap,promoter_strength,Tobacco_A.thaliana,0.565,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.506,256,4.0
+BERT,5-mer overlap,promoter_strength,Tobacco_A.thaliana,0.561,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.51,1024,4.9
+BERT,6-mer overlap,promoter_strength,Tobacco_A.thaliana,0.585,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.435,4096,6.0
+BERT,7-mer overlap,promoter_strength,Tobacco_A.thaliana,0.56,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.38,16384,7.0
+BERT,8-mer overlap,promoter_strength,Tobacco_A.thaliana,0.581,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.401,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Tobacco_A.thaliana,0.573,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.524,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Tobacco_A.thaliana,0.564,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.51,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Tobacco_A.thaliana,0.576,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.499,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Tobacco_A.thaliana,0.576,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.5,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.621,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.512,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Tobacco_A.thaliana,0.562,4096,6.0
+BERT,3-mer overlap,promoter_strength,Tobacco_S.bicolor,0.714,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.643,64,3.0
+BERT,4-mer overlap,promoter_strength,Tobacco_S.bicolor,0.708,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.637,256,4.0
+BERT,5-mer overlap,promoter_strength,Tobacco_S.bicolor,0.735,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.648,1024,4.9
+BERT,6-mer overlap,promoter_strength,Tobacco_S.bicolor,0.709,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.587,4096,6.0
+BERT,7-mer overlap,promoter_strength,Tobacco_S.bicolor,0.712,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.547,16384,7.0
+BERT,8-mer overlap,promoter_strength,Tobacco_S.bicolor,0.714,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.558,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Tobacco_S.bicolor,0.71,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.669,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Tobacco_S.bicolor,0.721,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.653,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Tobacco_S.bicolor,0.72,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.648,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Tobacco_S.bicolor,0.728,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.631,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.741,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.681,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Tobacco_S.bicolor,0.703,4096,6.0
+BERT,3-mer overlap,promoter_strength,Tobacco_Z.mays,0.724,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.67,64,3.0
+BERT,4-mer overlap,promoter_strength,Tobacco_Z.mays,0.712,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.656,256,4.0
+BERT,5-mer overlap,promoter_strength,Tobacco_Z.mays,0.723,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.632,1024,4.9
+BERT,6-mer overlap,promoter_strength,Tobacco_Z.mays,0.745,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.577,4096,6.0
+BERT,7-mer overlap,promoter_strength,Tobacco_Z.mays,0.713,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.515,16384,7.0
+BERT,8-mer overlap,promoter_strength,Tobacco_Z.mays,0.717,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.524,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Tobacco_Z.mays,0.741,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.674,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Tobacco_Z.mays,0.732,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.664,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Tobacco_Z.mays,0.726,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.623,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Tobacco_Z.mays,0.729,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.634,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.758,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.684,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Tobacco_Z.mays,0.719,4096,6.0
+BERT,3-mer overlap,promoter_strength,Maize_A.thaliana,0.601,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Maize_A.thaliana,0.499,64,3.0
+BERT,4-mer overlap,promoter_strength,Maize_A.thaliana,0.581,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Maize_A.thaliana,0.471,256,4.0
+BERT,5-mer overlap,promoter_strength,Maize_A.thaliana,0.6,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Maize_A.thaliana,0.445,1024,4.9
+BERT,6-mer overlap,promoter_strength,Maize_A.thaliana,0.584,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Maize_A.thaliana,0.409,4096,6.0
+BERT,7-mer overlap,promoter_strength,Maize_A.thaliana,0.531,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Maize_A.thaliana,0.32,16384,7.0
+BERT,8-mer overlap,promoter_strength,Maize_A.thaliana,0.586,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Maize_A.thaliana,0.232,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Maize_A.thaliana,0.539,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Maize_A.thaliana,0.451,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Maize_A.thaliana,0.571,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Maize_A.thaliana,0.521,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Maize_A.thaliana,0.597,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Maize_A.thaliana,0.431,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Maize_A.thaliana,0.573,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Maize_A.thaliana,0.404,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Maize_A.thaliana,0.62,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Maize_A.thaliana,0.542,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Maize_A.thaliana,0.585,4096,6.0
+BERT,3-mer overlap,promoter_strength,Maize_S.bicolor,0.609,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Maize_S.bicolor,0.518,64,3.0
+BERT,4-mer overlap,promoter_strength,Maize_S.bicolor,0.594,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Maize_S.bicolor,0.517,256,4.0
+BERT,5-mer overlap,promoter_strength,Maize_S.bicolor,0.631,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Maize_S.bicolor,0.581,1024,4.9
+BERT,6-mer overlap,promoter_strength,Maize_S.bicolor,0.623,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Maize_S.bicolor,0.481,4096,6.0
+BERT,7-mer overlap,promoter_strength,Maize_S.bicolor,0.643,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Maize_S.bicolor,0.388,16384,7.0
+BERT,8-mer overlap,promoter_strength,Maize_S.bicolor,0.601,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Maize_S.bicolor,0.445,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Maize_S.bicolor,0.641,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Maize_S.bicolor,0.573,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Maize_S.bicolor,0.646,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Maize_S.bicolor,0.509,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Maize_S.bicolor,0.633,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Maize_S.bicolor,0.562,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Maize_S.bicolor,0.647,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Maize_S.bicolor,0.549,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Maize_S.bicolor,0.641,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Maize_S.bicolor,0.593,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Maize_S.bicolor,0.64,4096,6.0
+BERT,3-mer overlap,promoter_strength,Maize_Z.mays,0.709,64,1.0
+BERT,3-mer non-overlap,promoter_strength,Maize_Z.mays,0.672,64,3.0
+BERT,4-mer overlap,promoter_strength,Maize_Z.mays,0.696,256,1.0
+BERT,4-mer non-overlap,promoter_strength,Maize_Z.mays,0.645,256,4.0
+BERT,5-mer overlap,promoter_strength,Maize_Z.mays,0.704,1024,1.0
+BERT,5-mer non-overlap,promoter_strength,Maize_Z.mays,0.638,1024,4.9
+BERT,6-mer overlap,promoter_strength,Maize_Z.mays,0.713,4096,1.0
+BERT,6-mer non-overlap,promoter_strength,Maize_Z.mays,0.584,4096,6.0
+BERT,7-mer overlap,promoter_strength,Maize_Z.mays,0.679,16384,1.0
+BERT,7-mer non-overlap,promoter_strength,Maize_Z.mays,0.55,16384,7.0
+BERT,8-mer overlap,promoter_strength,Maize_Z.mays,0.697,65536,1.0
+BERT,8-mer non-overlap,promoter_strength,Maize_Z.mays,0.495,65536,8.0
+DNABERT,3-mer overlap,promoter_strength,Maize_Z.mays,0.662,64,1.0
+DNABERT,3-mer non-overlap,promoter_strength,Maize_Z.mays,0.662,64,3.0
+DNABERT,4-mer overlap,promoter_strength,Maize_Z.mays,0.682,256,1.0
+DNABERT,4-mer non-overlap,promoter_strength,Maize_Z.mays,0.667,256,4.0
+DNABERT,5-mer overlap,promoter_strength,Maize_Z.mays,0.696,1024,1.0
+DNABERT,5-mer non-overlap,promoter_strength,Maize_Z.mays,0.617,1024,4.9
+DNABERT,6-mer overlap,promoter_strength,Maize_Z.mays,0.695,4096,1.0
+DNABERT,6-mer non-overlap,promoter_strength,Maize_Z.mays,0.632,4096,6.0
+AgroNT,6-mer non-overlap,promoter_strength,Maize_Z.mays,0.717,4096,6.0
+AgroNT IA3,6-mer non-overlap,promoter_strength,Maize_Z.mays,0.662,4096,6.0
+AgroNT LoRA,6-mer non-overlap,promoter_strength,Maize_Z.mays,0.702,4096,6.0
+BERT,3-mer overlap,terminator_strength,Tobacco_A.thaliana,0.667,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.594,64,3.0
+BERT,4-mer overlap,terminator_strength,Tobacco_A.thaliana,0.675,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.562,256,4.0
+BERT,5-mer overlap,terminator_strength,Tobacco_A.thaliana,0.68,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.544,1024,4.9
+BERT,6-mer overlap,terminator_strength,Tobacco_A.thaliana,0.676,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.555,4096,6.0
+BERT,7-mer overlap,terminator_strength,Tobacco_A.thaliana,0.64,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.47,16384,7.0
+BERT,8-mer overlap,terminator_strength,Tobacco_A.thaliana,0.534,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.471,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Tobacco_A.thaliana,0.691,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.619,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Tobacco_A.thaliana,0.707,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.602,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Tobacco_A.thaliana,0.702,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.524,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Tobacco_A.thaliana,0.688,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.519,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.687,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.664,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Tobacco_A.thaliana,0.527,4096,6.0
+BERT,3-mer overlap,terminator_strength,Tobacco_Z.mays,0.65,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.572,64,3.0
+BERT,4-mer overlap,terminator_strength,Tobacco_Z.mays,0.636,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.527,256,4.0
+BERT,5-mer overlap,terminator_strength,Tobacco_Z.mays,0.657,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.531,1024,4.9
+BERT,6-mer overlap,terminator_strength,Tobacco_Z.mays,0.66,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.513,4096,6.0
+BERT,7-mer overlap,terminator_strength,Tobacco_Z.mays,0.629,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.423,16384,7.0
+BERT,8-mer overlap,terminator_strength,Tobacco_Z.mays,0.497,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.418,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Tobacco_Z.mays,0.665,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.578,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Tobacco_Z.mays,0.665,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.562,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Tobacco_Z.mays,0.665,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.51,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Tobacco_Z.mays,0.646,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.488,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.645,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.633,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Tobacco_Z.mays,0.484,4096,6.0
+BERT,3-mer overlap,terminator_strength,Tobacco_GC,0.628,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Tobacco_GC,0.548,64,3.0
+BERT,4-mer overlap,terminator_strength,Tobacco_GC,0.543,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Tobacco_GC,0.495,256,4.0
+BERT,5-mer overlap,terminator_strength,Tobacco_GC,0.55,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Tobacco_GC,0.477,1024,4.9
+BERT,6-mer overlap,terminator_strength,Tobacco_GC,0.574,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Tobacco_GC,0.485,4096,6.0
+BERT,7-mer overlap,terminator_strength,Tobacco_GC,0.487,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Tobacco_GC,0.353,16384,7.0
+BERT,8-mer overlap,terminator_strength,Tobacco_GC,0.481,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Tobacco_GC,0.371,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Tobacco_GC,0.553,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Tobacco_GC,0.508,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Tobacco_GC,0.6,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Tobacco_GC,0.392,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Tobacco_GC,0.581,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Tobacco_GC,0.41,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Tobacco_GC,0.56,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Tobacco_GC,0.482,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Tobacco_GC,0.525,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Tobacco_GC,0.519,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Tobacco_GC,0.173,4096,6.0
+BERT,3-mer overlap,terminator_strength,Maize_A.thaliana,0.629,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Maize_A.thaliana,0.553,64,3.0
+BERT,4-mer overlap,terminator_strength,Maize_A.thaliana,0.608,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Maize_A.thaliana,0.501,256,4.0
+BERT,5-mer overlap,terminator_strength,Maize_A.thaliana,0.63,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Maize_A.thaliana,0.51,1024,4.9
+BERT,6-mer overlap,terminator_strength,Maize_A.thaliana,0.632,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Maize_A.thaliana,0.44,4096,6.0
+BERT,7-mer overlap,terminator_strength,Maize_A.thaliana,0.603,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Maize_A.thaliana,0.446,16384,7.0
+BERT,8-mer overlap,terminator_strength,Maize_A.thaliana,0.43,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Maize_A.thaliana,0.402,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Maize_A.thaliana,0.617,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Maize_A.thaliana,0.563,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Maize_A.thaliana,0.626,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Maize_A.thaliana,0.528,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Maize_A.thaliana,0.63,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Maize_A.thaliana,0.453,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Maize_A.thaliana,0.64,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Maize_A.thaliana,0.483,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Maize_A.thaliana,0.614,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Maize_A.thaliana,0.604,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Maize_A.thaliana,0.491,4096,6.0
+BERT,3-mer overlap,terminator_strength,Maize_Z.mays,0.619,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Maize_Z.mays,0.522,64,3.0
+BERT,4-mer overlap,terminator_strength,Maize_Z.mays,0.593,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Maize_Z.mays,0.483,256,4.0
+BERT,5-mer overlap,terminator_strength,Maize_Z.mays,0.625,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Maize_Z.mays,0.502,1024,4.9
+BERT,6-mer overlap,terminator_strength,Maize_Z.mays,0.62,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Maize_Z.mays,0.422,4096,6.0
+BERT,7-mer overlap,terminator_strength,Maize_Z.mays,0.587,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Maize_Z.mays,0.429,16384,7.0
+BERT,8-mer overlap,terminator_strength,Maize_Z.mays,0.41,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Maize_Z.mays,0.38,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Maize_Z.mays,0.593,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Maize_Z.mays,0.542,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Maize_Z.mays,0.604,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Maize_Z.mays,0.51,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Maize_Z.mays,0.607,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Maize_Z.mays,0.443,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Maize_Z.mays,0.613,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Maize_Z.mays,0.445,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Maize_Z.mays,0.581,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Maize_Z.mays,0.576,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Maize_Z.mays,0.463,4096,6.0
+BERT,3-mer overlap,terminator_strength,Maize_GC,0.616,64,1.0
+BERT,3-mer non-overlap,terminator_strength,Maize_GC,0.561,64,3.0
+BERT,4-mer overlap,terminator_strength,Maize_GC,0.628,256,1.0
+BERT,4-mer non-overlap,terminator_strength,Maize_GC,0.505,256,4.0
+BERT,5-mer overlap,terminator_strength,Maize_GC,0.595,1024,1.0
+BERT,5-mer non-overlap,terminator_strength,Maize_GC,0.571,1024,4.9
+BERT,6-mer overlap,terminator_strength,Maize_GC,0.637,4096,1.0
+BERT,6-mer non-overlap,terminator_strength,Maize_GC,0.491,4096,6.0
+BERT,7-mer overlap,terminator_strength,Maize_GC,0.615,16384,1.0
+BERT,7-mer non-overlap,terminator_strength,Maize_GC,0.592,16384,7.0
+BERT,8-mer overlap,terminator_strength,Maize_GC,0.541,65536,1.0
+BERT,8-mer non-overlap,terminator_strength,Maize_GC,0.443,65536,8.0
+DNABERT,3-mer overlap,terminator_strength,Maize_GC,0.668,64,1.0
+DNABERT,3-mer non-overlap,terminator_strength,Maize_GC,0.565,64,3.0
+DNABERT,4-mer overlap,terminator_strength,Maize_GC,0.624,256,1.0
+DNABERT,4-mer non-overlap,terminator_strength,Maize_GC,0.571,256,4.0
+DNABERT,5-mer overlap,terminator_strength,Maize_GC,0.66,1024,1.0
+DNABERT,5-mer non-overlap,terminator_strength,Maize_GC,0.56,1024,4.9
+DNABERT,6-mer overlap,terminator_strength,Maize_GC,0.649,4096,1.0
+DNABERT,6-mer non-overlap,terminator_strength,Maize_GC,0.545,4096,6.0
+AgroNT,6-mer non-overlap,terminator_strength,Maize_GC,0.556,4096,6.0
+AgroNT LoRA,6-mer non-overlap,terminator_strength,Maize_GC,0.597,4096,6.0
+AgroNT IA3,6-mer non-overlap,terminator_strength,Maize_GC,0.485,4096,6.0

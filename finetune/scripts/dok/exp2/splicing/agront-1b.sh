@@ -22,4 +22,4 @@ python train.py \
     --report_to "wandb" \
     --seed "$SEED" \
     --is_save_predictions True \
-    --gradient_accumulation_steps 32
+    --gradient_accumulation_steps 4

@@ -21,5 +21,5 @@ python train.py \
     --fp16 True \
     --report_to "wandb" \
     --seed "$SEED" \
-    --is_save_predictions True \
+    --is_save_predictions False \
     --gradient_accumulation_steps 4
