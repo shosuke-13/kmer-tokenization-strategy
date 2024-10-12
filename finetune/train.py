@@ -1,44 +1,24 @@
 import os
-import sys
-import io
 import json
-import time
-import yaml
-import math
-import hashlib
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Tuple, List, Any
 
-import boto3
 import wandb
 import torch
-import numpy as np
 import pandas as pd
 import transformers
-from datasets import load_dataset
-from torch.utils.data import Dataset
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    matthews_corrcoef,
-    precision_recall_curve,
-    auc,
-    roc_auc_score,
-    mean_squared_error,
-    mean_absolute_error,
-    r2_score,
-)
-from peft import (
-    LoraConfig,
-    IA3Config,
-    get_peft_model,
-    TaskType,
-)
 from loguru import logger
+from peft import LoraConfig, IA3Config, get_peft_model, TaskType
 
+from utils import generate_unique_run_name
+from metrics import (
+    calculate_r2_scores_by_experiment, 
+    compute_metrics_for_classification, 
+    compute_metrics_for_single_label_regression, 
+    compute_metrics_for_multi_label_regression
+)
 from kmer import KmerTokenizer
+from dataset import PlantGenomicBenchmark
 from visualize import plot_averages, plot_tissue_specific, plot_expression_profiles
 
 
@@ -69,6 +49,11 @@ class ModelArguments:
         metadata={"help": "Number of epochs with no improvement after which training will be stopped"}
     )
 
+    # K-mer configuration
+    use_nt_kmer        : bool = field(default=True, metadata={"help": "Whether to use nucleotide k-mers"})
+    kmer_window        : int  = field(default=6, metadata={"help": "K-mer window size"})
+    kmer_stride        : int  = field(default=6, metadata={"help": "K-mer stride"})
+
 
 @dataclass
 class DataArguments:
@@ -77,14 +62,9 @@ class DataArguments:
         default="InstaDeepAI/plant-genomic-benchmark",
         metadata={"help": "Hugging Face dataset repository"}
     )
-    pgb_details_yaml   : str  = field(default="pgb_tasks.yaml", metadata={"help": "Path to the PGB details YAML file"})
+    pgb_details_yaml   : str  = field(default="config/pgb_tasks.yaml", metadata={"help": "Path to the PGB details YAML file"})
     task_name          : str  = field(default="terminator_strength", metadata={"help": "Name of the task"})
     do_all_tasks       : bool = field(default=True, metadata={"help": "Whether to train on all tasks"})
-
-    # K-mer configuration
-    use_nt_kmer        : bool = field(default=True, metadata={"help": "Whether to use nucleotide k-mers"})
-    kmer_window        : int  = field(default=6, metadata={"help": "K-mer window size"})
-    kmer_stride        : int  = field(default=6, metadata={"help": "K-mer stride"})
     
     # Experiment tracking
     project_name       : str  = field(default="hf-peft", metadata={"help": "Weights & Biases project name"})
@@ -141,229 +121,42 @@ class TrainingArguments(transformers.TrainingArguments):
     report_to             : str  = field(default=None)
 
 
-def tokenize_function(tokenizer, sample: Dict[str, Any], max_length: int) -> Dict[str, Any]:
-    """Tokenizes single sequence."""
-    sequence = sample["sequence"]
-    encoded = tokenizer(
-        sequence,
-        padding="max_length",
-        truncation=True,
-        max_length=max_length
-    )
+def init_wandb(wandb_api_key: str, project_name: str, run_name: str) -> wandb.sdk.wandb_run.Run:
+    if wandb_api_key:
+        logger.info("Wandb API key found in environment variables.")
 
-    # Handle both 'label' and 'labels' keys
-    label_key = "label" if "label" in sample else "labels"
+        wandb.login(key=wandb_api_key)
+        run = wandb.init(project=project_name, name=run_name)
 
-    return {
-        "input_ids": encoded["input_ids"],
-        "attention_mask": encoded["attention_mask"],
-        "labels": sample[label_key],
-    }
-
-
-def pgb_dataset_details(data_args: DataArguments) -> Dict[str, Any]:
-    try:
-        with open(data_args.pgb_details_yaml, 'r') as file:
-            config = yaml.safe_load(file)
-            pgb_details = config['pgb_tasks']
-    except FileNotFoundError:
-        logger.error("pgb_tasks.yaml file not found")
-        sys.exit(1)
-    except yaml.YAMLError as e:
-        logger.error(f"Error parsing YAML file: {e}")
-        sys.exit(1)
-    
-    if data_args.do_all_tasks:
-        return pgb_details[data_args.task_name]
+        logger.info(f"wandb run name: {run.name}")
+        logger.success("wandb initialized successfully.")
+        return run
     else:
-        # single task given full task name, e.g., "terminator_strength.leaf"
-        return pgb_details[data_args.task_name.split(".")[0]]
+        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
+        return None   
 
 
-def pgb_dataset(
-        data_args: DataArguments, 
-        training_args: ModelArguments, 
-        tokenizer: transformers.PreTrainedTokenizer, 
-        max_seq_len: int
-    ) -> Tuple[Dataset, Dataset, Dataset]:
-    """Load plant-genomic-benchmark dataset and tokenize."""
-    try:
-        logger.debug(f"Hugging Face dataset repository: {data_args.hf_dataset_repo}")
-        logger.debug(f"Task name: {data_args.task_name}")
-
-        # BERT/DNABERT: 512 tokens, NT/AgroNT: 1024 tokens
-        num_tokens = min(math.ceil((max_seq_len - data_args.kmer_window + 1) / data_args.kmer_stride), training_args.model_max_length)
-        logger.debug(f"Max number of tokens: {num_tokens}")
-
-        dataset = load_dataset(data_args.hf_dataset_repo, task_name=data_args.task_name, trust_remote_code=True)
-        tokenized_datasets = dataset.map(
-            lambda x: tokenize_function(tokenizer, x, num_tokens),
-            batched=True
-        )
-
-        logger.success(f"Dataset loaded and tokenized successfully.")
-    except Exception as e:
-        logger.error(f"Error loading dataset: {e}")
-        sys.exit(1)
-
-    if "validation" in tokenized_datasets.keys():
-        logger.debug("validation set found.")
-        return (
-            tokenized_datasets["train"],
-            tokenized_datasets["validation"],
-            tokenized_datasets["test"],
-        )
-    else:
-        logger.debug("validation set not found.")
-        train_datasets = tokenized_datasets["train"].train_test_split(test_size=data_args.test_size, seed=data_args.val_split_seed)
-        return train_datasets["train"], train_datasets["test"], tokenized_datasets["test"]
-
-
-def get_compute_metrics(task_type: str):
-    def compute_metrics(pred):
-        logits, labels = pred
-        try:
-            if task_type == "binary_classification":
-                preds = logits.argmax(-1)
-                precision, recall, _ = precision_recall_curve(labels, preds)
-                return {
-                    "accuracy": accuracy_score(labels, preds),
-                    "f1": f1_score(labels, preds),
-                    "precision": precision_score(labels, preds),
-                    "recall": recall_score(labels, preds),
-                    "mcc": matthews_corrcoef(labels, preds),
-                    "roc_auc": roc_auc_score(labels, preds),
-                    "pr_auc": auc(recall, precision),
-                }
-            elif task_type in ["single_variable_regression", "multi_variable_regression"]:
-                preds = logits.squeeze() if task_type == "single_variable_regression" else logits
-                metrics = {
-                    "mse": mean_squared_error(labels, preds),
-                    "rmse": np.sqrt(mean_squared_error(labels, preds)),
-                    "mae": mean_absolute_error(labels, preds),
-                    "r2": r2_score(labels, preds)
-                }
-                
-                # R2 scores for each variable  
-                if task_type == "multi_variable_regression":
-                    for i in range(labels.shape[1]):
-                        metrics[f"r2_var_{i}"] = r2_score(labels[:, i], preds[:, i])
-                
-                return metrics
-            else:
-                raise ValueError(f"Unsupported task type: {task_type}")
-        except Exception as e:
-            logger.error(f"Error computing metrics: {e}")
-            sys.exit(1)
-    return compute_metrics
-
-
-def save_results(
-        predictions,
-        key_path: str,
-        bucket_name: str,
-        task_type: str,
-        names: List[str],
-        results: Dict[str, Any]
-    ) -> None:
-    """Save observed and predicted values."""
+def save_results(pred, task_type: str, names: List[str]) -> pd.DataFrame:
     df = pd.DataFrame({"name": names})
     
-    # save predictions and true labels 
     if task_type == "single_variable_regression":
-        df["true_label"] = predictions.label_ids
-        df["pred_label"] = predictions.predictions.squeeze()
+        df["true_label"] = pred.label_ids
+        df["pred_label"] = pred.predictions.squeeze()
     elif task_type == "multi_variable_regression":
-        true_labels = predictions.label_ids
-        pred_labels = predictions.predictions
+        true_labels = pred.label_ids
+        pred_labels = pred.predictions
+
         for i in range(pred_labels.shape[1]):
             df[f"true_label_{i}"] = true_labels[:, i]
             df[f"pred_label_{i}"] = pred_labels[:, i]
     else:
         # binary classification
-        df["true_label"] = predictions.label_ids
-        df["pred_label"] = predictions.predictions.argmax(axis=1)
-        df["pred_score_0"] = predictions.predictions[:, 0]
-        df["pred_score_1"] = predictions.predictions[:, 1]
-
-    # upload to S3
-    try:
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
-
-        # S3 client for csv uploading
-        s3_client = boto3.client('s3')
-        
-        # predictions
-        s3_client.put_object(
-            Bucket=bucket_name, 
-            Key=key_path, 
-            Body=csv_buffer.getvalue()
-        )
-
-        # metrics results (json)
-        results_key = key_path.replace("predictions.csv", "results.json")
-        s3_client.put_object(
-            Bucket=bucket_name, 
-            Key=results_key, 
-            Body=json.dumps(results)
-        )
-    except Exception as e:
-        logger.error(f"Error saving results to S3: {e}")
-
-
-def generate_unique_run_name(hf_model_path: str, task_name: str, use_peft: str) -> str:
-    """unique run name for tracking experiments."""
-    timestamp = int(time.time())
-    hash_input = f"{hf_model_path}_{task_name}_{timestamp}"
-    hash_value = hashlib.md5(hash_input.encode()).hexdigest()[:8]
-    model_name = hf_model_path.split("/")[-1]
-    return f"{model_name}_{task_name}_{use_peft}_{hash_value}"
-
-
-def get_callbacks(model_args):
-    """Early stopping callback if full fine-tuning."""
-    callbacks = []
-    if model_args.early_stopping_patience is not None and model_args.early_stopping_patience > 0:
-        callbacks.append(transformers.EarlyStoppingCallback(early_stopping_patience=model_args.early_stopping_patience))
-    return callbacks
-
-
-def calculate_r2_scores_by_experiment(
-        trainer: transformers.Trainer,
-        eval_dataset: Dataset
-    ) -> Dict[str, float]:
-    """Calculate R2 scores for each experiment on promoter/terminator strength"""
-    pred = trainer.predict(eval_dataset)
-    results_df = pd.DataFrame({
-                    "name": eval_dataset["name"],
-                    "true_label": pred.label_ids,
-                    "pred_label": pred.predictions.squeeze()
-                })
-
-    logger.debug(f"Full results dataframe shape: {results_df.shape}")
-    logger.debug(f"Results dataframe: {results_df.head()}")
-
-    # Extract unique suffixes
-    suffixes = results_df['name'].apply(lambda x: x.split('_')[-1]).unique()
-
-    r2_scores = {}
-    for suffix in suffixes:
-        filtered_df = results_df[results_df['name'].apply(lambda x: x.split('_')[-1] == suffix)]
-        logger.debug(f"Filtered dataframe for {suffix} shape: {filtered_df.shape}")
-        if filtered_df.empty:
-            logger.warning(f"No data found for suffix: {suffix}")
-            r2_scores[suffix] = None
-        else:
-            r2_scores[suffix] = calculate_r2_score(filtered_df)
+        df["true_label"] = pred.label_ids
+        df["pred_label"] = pred.predictions.argmax(axis=1)
+        df["pred_score_0"] = pred.predictions[:, 0]
+        df["pred_score_1"] = pred.predictions[:, 1]
     
-    return r2_scores
-
-
-def calculate_r2_score(df: pd.DataFrame) -> float:
-    if df.empty:
-        return None
-    return r2_score(df["true_label"], df["pred_label"])
+    return df
 
 
 def log_metrics_to_wandb(
@@ -374,274 +167,195 @@ def log_metrics_to_wandb(
         training_args: TrainingArguments
     ) -> None:
     """Log metrics to Weights & Biases (wandb)."""
-    try:
-        metrics = {
-            "model_name"      : model_args.hf_model_path,
-            "task_name"       : data_args.task_name,
-            "epochs"          : training_args.num_train_epochs,
-            "learning_rate"   : training_args.learning_rate,
-            "train_batch_size": training_args.per_device_train_batch_size,
-            "eval_batch_size" : training_args.per_device_eval_batch_size,
-            "kmer_window"     : data_args.kmer_window,
-            "kmer_stride"     : data_args.kmer_stride,
-        }
 
-        if model_args.use_lora:
-            logger.debug("Logging LoRA metrics")
-            metrics.update({
-                "use_lora"           : model_args.use_lora,
-                "lora_r"             : model_args.lora_r,
-                "lora_alpha"         : model_args.lora_alpha,
-                "lora_dropout"       : model_args.lora_dropout,
-                "lora_target_modules": model_args.lora_target_modules
-            })
-        elif model_args.use_ia3:
-            logger.debug("Logging IA3 metrics")
-            metrics.update({
-                "use_ia3"                : model_args.use_ia3,
-                "ia3_target_modules"     : "key, value, intermediate.dense",
-                "ia3_feedforward_modules": "intermediate.dense"
-            })
-        else:
-            logger.debug("Logging fine-tuning metrics")
+    metrics = {
+        "model_name"      : model_args.hf_model_path,
+        "task_name"       : data_args.task_name,
+        "epochs"          : training_args.num_train_epochs,
+        "learning_rate"   : training_args.learning_rate,
+        "train_batch_size": training_args.per_device_train_batch_size,
+        "eval_batch_size" : training_args.per_device_eval_batch_size,
+        "kmer_window"     : data_args.kmer_window,
+        "kmer_stride"     : data_args.kmer_stride,
+    }
 
+    if model_args.use_lora:
+        logger.debug("Logging LoRA metrics")
+        metrics.update({
+            "use_lora"           : model_args.use_lora,
+            "lora_r"             : model_args.lora_r,
+            "lora_alpha"         : model_args.lora_alpha,
+            "lora_dropout"       : model_args.lora_dropout,
+            "lora_target_modules": model_args.lora_target_modules
+        })
+    elif model_args.use_ia3:
+        logger.debug("Logging IA3 metrics")
+        metrics.update({
+            "use_ia3"                : model_args.use_ia3,
+            "ia3_target_modules"     : "key, value, intermediate.dense",
+            "ia3_feedforward_modules": "intermediate.dense"
+        })
+    else:
+        logger.debug("Logging fine-tuning metrics")
 
-        metrics.update(results)
-        run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
-
-        logger.debug(f"Logging metrics to wandb: {metrics}")
-        logger.success("wandb run completed successfully.")
-    except Exception as e:
-        logger.error(f"Error logging metrics to wandb: {e}")
-        raise
+    metrics.update(results)
+    run.log({"metrics": wandb.Table(dataframe=pd.DataFrame([metrics]))})
 
 
-def get_tissue_names(species_name: str = None) -> Tuple[List[str], int, int]:
-    # get tissue names
-    try:
-        with open("expression_tissues.yaml", 'r') as file:
-                config = yaml.safe_load(file)[species_name]
 
-        tissues = config["tissues"]
-        num_rows = config["num_rows"]
-        num_cols = config["num_cols"]
+def load_and_split_dataset(task_name: str, tokenizer, model_args: ModelArguments, training_arg: TrainingArguments):
+    pgb = PlantGenomicBenchmark(pgb_config="config/pgb_tasks.yaml", expression_config="config/expression_tasks.yaml")
+    dataset = pgb.load_dataset(task_name)
 
-        logger.success("Tissue names loaded successfully")
-    except FileNotFoundError:
-        logger.error("Tissue names yaml file is not found")
-        sys.exit(1)
-    
-    return tissues, num_rows, num_cols
+    # kmer tokenization
+    num_tokens = pgb.get_num_tokens(
+        max_seq_len=pgb.get_max_seq_length(task_name), 
+        kmer_window=model_args.kmer_window, 
+        kmer_stride=model_args.kmer_stride, 
+        model_max_length=training_arg.model_max_length
+    )
+    tokenized_datasets = pgb.tokenize_dataset(dataset, tokenizer, num_tokens)
+
+    return pgb.split_dataset(tokenized_datasets) # train, val, test
+
+
+def get_model(task_type: str, num_labels: int, model_args: ModelArguments, training_args: TrainingArguments):
+    if task_type == "binary_classification":
+         return transformers.AutoModelForSequenceClassification.from_pretrained(
+                model_args.hf_model_path,
+                cache_dir=training_args.cache_dir,
+                num_labels=num_labels,
+                trust_remote_code=True,
+            )
+    else:
+        # single_variable_regression or multi_variable_regression
+        return transformers.AutoModelForSequenceClassification.from_pretrained(
+                model_args.hf_model_path,
+                num_labels=num_labels,
+                problem_type="regression",
+                trust_remote_code=True,
+            )
+
+
+def set_peft_model(model, model_args: ModelArguments):
+    if model_args.use_lora:
+        lora_config = LoraConfig(
+                        r=model_args.lora_r,
+                        lora_alpha=model_args.lora_alpha,
+                        target_modules=list(model_args.lora_target_modules.split(",")),
+                        lora_dropout=model_args.lora_dropout,
+                        bias="none",
+                        task_type=TaskType.SEQ_CLS,
+                        inference_mode=False,
+                    )
+        model = get_peft_model(model, lora_config)
+        model.print_trainable_parameters()
+    elif model_args.use_ia3:
+        ia3_config = IA3Config(
+                        task_type=TaskType.SEQ_CLS,
+                        target_modules=["key", "value", "intermediate.dense"],
+                        feedforward_modules=["intermediate.dense"],
+                    )
+        model = get_peft_model(model, ia3_config)
+        model.print_trainable_parameters()
+
 
 def train(
         model_args: ModelArguments, 
         data_args: DataArguments, 
         training_args: TrainingArguments, 
         tokenizer: transformers.PreTrainedTokenizer, 
-        task_details: Dict[str, Any],
+        task_type: str,
         run: Optional[wandb.sdk.wandb_run.Run] = None
     ) -> None:
-    """Train and evaluate model.
 
-    1. Load benchmark dataset
-    2. Load model
-    3. Configure PEFT (LoRA/IA3)
-    4. Define trainer
-    5. Train model
-    6. Save evaluation results
-    7. Save prediction values
-
-    Args:
-        model_args (ModelArguments): model arguments
-        data_args (DataArguments): data arguments
-        training_args (TrainingArguments): training arguments
-        tokenizer (transformers.PreTrainedTokenizer): tokenizer
-        task_details (Dict[str, Any]): task details
-        run (Optional[wandb.sdk.wandb_run.Run], optional): wandb run. Defaults to None.
-    Returns:
-        None
-    """
+    # the number of prediction labels
+    if task_type == "binary_classification":
+        num_labels = 2
+        compute_metrics = compute_metrics_for_classification
+    elif task_type == "multi_variable_regression":
+        num_labels = len(train_dataset[0]["labels"])
+        compute_metrics = compute_metrics_for_multi_label_regression
+    elif task_type == "single_variable_regression":
+        num_labels = 1
+        compute_metrics = compute_metrics_for_single_label_regression
+    else:
+        logger.error(f"Unsupported task type: {task_type}")
 
     # load plant-genomic-benchmark dataset
-    train_dataset, eval_dataset, test_dataset = pgb_dataset(
-        data_args=data_args,
-        training_args=training_args,
-        tokenizer=tokenizer,
-        max_seq_len=task_details["max_seq_len"]
+    train_dataset, eval_dataset, test_dataset = load_and_split_dataset(
+        task_name=data_args.task_name, 
+        tokenizer=tokenizer, 
+        model_args=model_args, 
+        training_arg=training_args
     )
 
-    # load model
-    try:
-        num_labels = len(train_dataset[0]["labels"]) if task_details['type'] == "multi_variable_regression" else task_details["num_labels"]
-        logger.debug(f"Load {task_details['type']} model: num_labels={num_labels}")
-        if task_details["type"] == "binary_classification":
-            model = transformers.AutoModelForSequenceClassification.from_pretrained(
-                        model_args.hf_model_path,
-                        cache_dir=training_args.cache_dir,
-                        num_labels=num_labels,
-                        trust_remote_code=True,
-                    )
-        else:
-            # single_variable_regression or multi_variable_regression
-            model = transformers.AutoModelForSequenceClassification.from_pretrained(
-                        model_args.hf_model_path,
-                        num_labels=num_labels,
-                        problem_type="regression",
-                        trust_remote_code=True
-                    )
-    except Exception as e:
-        logger.error(f"Error loading model: {e}")
-        sys.exit(1)
-
-    # configure peft
-    try:
-        if model_args.use_lora:
-            lora_config = LoraConfig(
-                            r=model_args.lora_r,
-                            lora_alpha=model_args.lora_alpha,
-                            target_modules=list(model_args.lora_target_modules.split(",")),
-                            lora_dropout=model_args.lora_dropout,
-                            bias="none",
-                            task_type=TaskType.SEQ_CLS,
-                            inference_mode=False,
-                        )
-            model = get_peft_model(model, lora_config)
-            model.print_trainable_parameters()
-
-            logger.success(f"LoRA configured successfully.")
-        elif model_args.use_ia3:
-            ia3_config = IA3Config(
-                            task_type=TaskType.SEQ_CLS,
-                            target_modules=["key", "value", "intermediate.dense"],
-                            feedforward_modules=["intermediate.dense"],
-                        )
-            model = get_peft_model(model, ia3_config)
-            model.print_trainable_parameters()
-
-            logger.success(f"IA3 configured successfully.")
-        elif model_args.use_lora and model_args.use_ia3:
-            logger.error("Both LoRA and IA3 cannot be used at the same time.")
-            sys.exit(1)
-        else:
-            logger.warning("No PEFT model is used.")
-        
-        logger.success(f"PEFT configured successfully.")
-    except Exception as e:
-        logger.error(f"Error configuring PEFT: {e}")
-        sys.exit(1)
+    model = get_model(task_type, num_labels, model_args, training_args)
+    peft_model = set_peft_model(model, model_args, training_args)
 
     # define trainer
-    compute_metrics = get_compute_metrics(task_details["type"])
     trainer = transformers.Trainer(
-                model=model,
+                model=peft_model,
                 tokenizer=tokenizer,
                 args=training_args,
                 compute_metrics=compute_metrics,
                 train_dataset=train_dataset,
                 eval_dataset=eval_dataset,
-                callbacks=get_callbacks(model_args),
+                callbacks=transformers.EarlyStoppingCallback(early_stopping_patience=model_args.early_stopping_patience),
             )
     
     # finetune
-    try:
-        trainer.train()
-        trainer.save_model(training_args.output_dir)
-        logger.success(f"Model trained successfully.")
-    except Exception as e:
-        logger.error(f"Error training model: {e}")
-        sys.exit(1)
+    trainer.train()
+    trainer.save_model(training_args.output_dir)
 
-    # save evaluation results
-    if training_args.eval_and_save_results:
-        results = trainer.evaluate(eval_dataset=test_dataset) # evaluate on test set
-        os.makedirs(training_args.output_dir, exist_ok=True)
-        with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
-            json.dump(results, f)
+    results = trainer.evaluate(eval_dataset=test_dataset)
+    pred = trainer.predict(test_dataset)
 
-        # calculate R2 scores for promoter/terminator strength
-        if data_args.task_name.endswith("leaf") or data_args.task_name.endswith("protoplast"):
-            r2_scores = calculate_r2_scores_by_experiment(trainer, test_dataset)
-            results.update(r2_scores)
-            logger.info(f"R2 scores: {r2_scores}")
-        
-        # plot expression profiles
-        if data_args.task_name.startswith("gene_exp"):
-            logger.info("Running visualization functions for gene expression")
+    if data_args.task_name.endswith("leaf") or data_args.task_name.endswith("protoplast"):
+        results.update(calculate_r2_scores_by_experiment(pred, test_dataset))
 
-            pred = trainer.predict(test_dataset)
-            tissues, num_rows, num_cols = get_tissue_names(data_args.task_name.split(".")[-1])
+    if data_args.task_name.startswith("gene_exp"):
+        save_expression_results(pred, training_args.output_dir, data_args.task_name.split(".")[-1])
 
-            output_dir = training_args.output_dir
-
-            plot_averages(pred, output_dir)
-            plot_tissue_specific(pred, output_dir, num_rows, num_cols, tissues)
-            plot_expression_profiles(pred, tissues, output_dir, mode='side_by_side', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
-            plot_expression_profiles(pred, tissues, output_dir, mode='separate', cmap_list=['Blues', 'Purples', 'Greens', 'Reds'])
-
-            # save wandb images
-            try:
-                wandb.log({"average_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plot_all_tissues.png"))})
-                wandb.log({"tissue_specific_plot": wandb.Image(os.path.join(output_dir, "prediction_actual_plots_tissues.png"))})
-
-                for cmap_color in ['Blues', 'Purples', 'Greens', 'Reds']:
-                    wandb.log({"expression_profiles_side_by_side": wandb.Image(os.path.join(output_dir, f"tissue_expression_profiles_comparison_{cmap_color}.png"))})
-                    wandb.log({
-                        "true_expression_profiles": wandb.Image(os.path.join(output_dir, f"true_expression_profiles_{cmap_color}.png")),
-                        "predicted_expression_profiles": wandb.Image(os.path.join(output_dir, f"predicted_expression_profiles_{cmap_color}.png"))
-                    })
-                logger.success("Visualization plots logged to wandb.")
-            except Exception as e:
-                logger.error(f"Error logging visualization plots to wandb: {e}")
-
-        # log metrics to wandb
-        log_metrics_to_wandb(run, results, model_args, data_args, training_args)
-
-        # save prediction values
-        if data_args.is_save_predictions:
-            pred = trainer.predict(test_dataset)
-
-            # ex.) agro-nucleotide-transformer-1b/lora/terminator_strength/seed-42/predictions.csv
-            bucket_name = os.environ.get("S3_BUCKET_NAME", "pmb2024-experiments")
-            use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
-            key_path = os.path.join(
-                model_args.hf_model_path.split("/")[-1], 
-                use_peft,
-                data_args.task_name,
-                f"seed-{str(training_args.seed)}",
-                "predictions.csv"
-            )
-
-            # save metrics and predictions to S3
-            save_results(
-                pred, 
-                key_path, # S3 key
-                bucket_name, # S3 bucket
-                task_details["type"], 
-                test_dataset["name"],
-                results # metrics
-            )
+    return results, pred
 
 
-def init_wandb(
-        wandb_api_key: str, 
-        project_name: str, 
-        run_name: str
-    ) -> wandb.sdk.wandb_run.Run:
-    """Initialize wandb."""
-    if wandb_api_key:
-        logger.info("Wandb API key found in environment variables.")
-        try:
-            wandb.login(key=wandb_api_key)
-            run = wandb.init(project=project_name, name=run_name)
-            logger.info(f"wandb run name: {run.name}")
-            logger.success("wandb initialized successfully.")
-            return run
-        except Exception as e:
-            logger.error(f"Error initializing wandb: {e}")
-            sys.exit(1)
-    else:
-        logger.warning("Wandb API key not found in environment variables. Skipping wandb initialization.")
-        return None   
+def save_expression_results(pred, output_dir, task_name):
+    pgb = PlantGenomicBenchmark()
+    tissues, num_rows, num_cols = pgb.get_tissue_name(task_name)
+
+    # expression profile plots
+    plot_averages(pred, output_dir)
+    plot_tissue_specific(pred, output_dir, num_rows, num_cols, tissues)
+    plot_expression_profiles(
+        pred, 
+        tissues, 
+        output_dir, 
+        mode='side_by_side', 
+        cmap_list=['Blues', 'Purples', 'Greens', 'Reds']
+    )
+    plot_expression_profiles(
+        pred, 
+        tissues, 
+        output_dir, 
+        mode='separate', 
+        cmap_list=['Blues', 'Purples', 'Greens', 'Reds']
+    )
+
+    wandb.log({"average_plot": wandb.Image(f"{output_dir}/prediction_actual_plot_all_tissues.png")})
+    wandb.log({"tissue_specific_plot": wandb.Image(f"{output_dir}/prediction_actual_plots_tissues.png")})
+
+    for cmap_color in ['Blues', 'Purples', 'Greens', 'Reds']:
+        wandb.log({
+            "expression_profiles_side_by_side": 
+            wandb.Image(f"{output_dir}/tissue_expression_profiles_comparison_{cmap_color}.png")
+        })
+        wandb.log({
+            "true_expression_profiles": 
+            wandb.Image(f"{output_dir}/true_expression_profiles_{cmap_color}.png"),
+            "predicted_expression_profiles": 
+            wandb.Image(f"{output_dir}/predicted_expression_profiles_{cmap_color}.png")
+        })
 
 
 def main():
@@ -651,81 +365,71 @@ def main():
     logger.add(os.path.join(training_args.output_dir, "train_and_evaulate.log"), rotation="10 MB")
 
     # load tokenizer (DNABERT-based or NT-based)
-    try:
-        if data_args.use_nt_kmer:
-            # NT and AgroNT uses the same tokenizer
-            tokenizer = transformers.AutoTokenizer.from_pretrained("InstaDeepAI/agro-nucleotide-transformer-1b")
-            logger.info("Load Nucleotide Transformer kmer tokenizer")
-        else:
-            tokenizer =  KmerTokenizer(
-                    vocab_file=f"kmer/kmer_{data_args.kmer_window}/vocab.txt",
-                    max_length=512,
-                    model_max_length=512,
-                    k=data_args.kmer_window,
-                    stride=data_args.kmer_stride,
-                )
-            logger.info("Load reconstruct DNABERT kmer tokenizer")
-        logger.success(f"Tokenizer loaded successfully.")
-    except Exception as e:
-        logger.error(f"Error loading tokenizer: {e}")
-        sys.exit(1) 
+    if data_args.use_nt_kmer:
+        # NT, NT-V2 and AgroNT uses the same tokenizer
+        tokenizer = transformers.AutoTokenizer.from_pretrained("InstaDeepAI/agro-nucleotide-transformer-1b")
+    else:
+        tokenizer =  KmerTokenizer(
+                vocab_file=f"kmer/kmer_{data_args.kmer_window}/vocab.txt",
+                max_length=512,
+                model_max_length=512,
+                k=data_args.kmer_window,
+                stride=data_args.kmer_stride,
+            )
     
     # fine-tune on PGB dataset
-    task_details = pgb_dataset_details(data_args)
     wandb_api_key = os.environ.get("WANDB_API_KEY")
-    logger.debug(f"Task details: {task_details}")
 
+    pgb = PlantGenomicBenchmark()
     use_peft = "lora" if model_args.use_lora else "ia3" if model_args.use_ia3 else "ft"
+
     if data_args.do_all_tasks: # train on all tasks
-        logger.info("Train on all tasks.")
-        for detail_name in task_details["tasks"]:
+        for detail_name in pgb.pgb_config["tasks"]:
+            task_name = data_args.task_name
             data_args.task_name = data_args.task_name + "." + detail_name
             
             # initialize wandb
             run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
-            run = init_wandb(wandb_api_key, data_args.project_name, run_name)
-
-            logger.info(f"Current task name: {data_args.task_name}")
-            logger.debug(f"Wandb run name: {run.name}")
+            current_run = init_wandb(wandb_api_key, data_args.project_name, run_name)
             
-            train(
+            results, pred = train(
                 model_args=model_args,
                 data_args=data_args,
                 training_args=training_args,
                 tokenizer=tokenizer,
-                task_details=task_details,
-                run=run
+                task_type=pgb.pgb_config[task_name]["type"],
+                run=current_run
             )
+            
+            # log evaluation metrics
+            os.makedirs(training_args.output_dir, exist_ok=True)
+            with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
+                json.dump(results, f)
+            
+            log_metrics_to_wandb(run, results, model_args, data_args, training_args)
+
             data_args.task_name = data_args.task_name.split(".")[0] # reset task_name
-            try:
-                logger.info("Finishing wandb run.")
-                wandb.finish()
-            except Exception as e:
-                logger.error(f"Error finishing wandb run: {e}")
+            wandb.finish()
     else:
         # train on single task
-        logger.info("Train on single task.")
-
-        # initialize wandb
         run_name = generate_unique_run_name(model_args.hf_model_path, data_args.task_name, use_peft)
         run = init_wandb(wandb_api_key, data_args.project_name, run_name)
 
-        train(
+        results, pred = train(
             model_args=model_args,
             data_args=data_args,
             training_args=training_args,
             tokenizer=tokenizer,
-            task_details=task_details,
+            task_type=pgb.pgb_config[data_args.task_name]["type"],
             run=run
         )
 
-        # finish wandb run
-        if run is not None:
-            try:
-                logger.info("Finishing wandb run.")
-                wandb.finish()
-            except Exception as e:
-                logger.error(f"Error finishing wandb run: {e}")
+        os.makedirs(training_args.output_dir, exist_ok=True)
+        with open(os.path.join(training_args.output_dir, "eval_results.json"), "w") as f:
+            json.dump(results, f)
+        
+        log_metrics_to_wandb(run, results, model_args, data_args, training_args)
+        wandb.finish()
 
 
 if __name__ == "__main__":
