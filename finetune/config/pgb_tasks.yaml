@@ -1,0 +1,58 @@
+poly_a:
+  type: binary_classification
+  num_labels: 2
+  max_seq_len: 400
+  tasks:
+    - arabidopsis_thaliana
+    - oryza_sativa_indica_group
+    - oryza_sativa_japonica_group
+    - trifolium_pratense
+    - medicago_truncatula
+    - chlamydomonas_reinhardtii
+splicing:
+  type: binary_classification
+  num_labels: 2
+  max_seq_len: 398
+  tasks:
+    - arabidopsis_thaliana_donor
+    - arabidopsis_thaliana_acceptor
+lncrna:
+  type: binary_classification
+  num_labels: 2
+  max_seq_len: 6000
+  tasks:
+    - m_esculenta
+    - z_mays
+    - g_max
+    - s_lycopersicum
+    - t_aestivum
+    - s_bicolor
+promoter_strength:
+  type: single_variable_regression
+  num_labels: 1
+  max_seq_len: 170
+  tasks:
+    - leaf
+    - protoplast
+terminator_strength:
+  type: single_variable_regression
+  num_labels: 1
+  max_seq_len: 170
+  tasks:
+    - leaf
+    - protoplast
+gene_exp:
+  type: multi_variable_regression
+  max_seq_len: 6000
+  tasks:
+    - arabidopsis_thaliana
+    - glycine_max
+    - solanum_lycopersicum
+    - oryza_sativa
+    - zea_mays
+pro_seq:
+  type: binary_classification
+  num_labels: 2
+  max_seq_len: 1000
+  tasks:
+    - m_esculenta

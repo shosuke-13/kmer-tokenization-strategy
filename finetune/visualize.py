@@ -10,6 +10,7 @@ from scipy.stats import gaussian_kde
 from sklearn.metrics import pairwise_distances
 from loguru import logger
 
+
 def plot_averages(preds: Tuple[np.ndarray, np.ndarray], output_dir: str) -> None:
     """
     Plot prediction-observed graph for all tissues.
@@ -59,6 +60,7 @@ def plot_averages(preds: Tuple[np.ndarray, np.ndarray], output_dir: str) -> None
     plt.savefig(plot_output, dpi=300, bbox_inches='tight')
     logger.info(f"Prediction-Actual Plot for All Tissues saved to {plot_output}")
     plt.close(fig)
+
 
 def plot_tissue_specific(
         preds: Tuple[np.ndarray, np.ndarray], 
@@ -127,6 +129,7 @@ def plot_tissue_specific(
     plt.savefig(plot_output, dpi=300, bbox_inches='tight')
     logger.info(f"Prediction-Actual Plots for Tissues saved to {plot_output}")
     plt.close(fig)
+
 
 def plot_expression_profiles(
         preds: Tuple[np.ndarray, np.ndarray],
